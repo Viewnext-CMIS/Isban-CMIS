@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Implementation-Title: OpenCMIS Server Implementation WAR packaging
+Implementation-Version: 1.1.0
+Archiver-Version: Plexus Archiver
+Built-By: fmui
+Implementation-Vendor-Id: org.apache.chemistry.opencmis
+Implementation-Vendor: The Apache Software Foundation
+DisableIBMJAXWSEngine: true
+X-Compile-Target-JDK: 1.7
+X-Apache-SVN-Revision: 1789681
+X-Compile-Source-JDK: 1.7
+Created-By: Apache Maven 3.3.9
+Build-Jdk: 1.8.0_121
+
