@@ -133,6 +133,8 @@ import org.apache.chemistry.opencmis.commons.impl.server.ObjectInfoImpl;
 import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 import org.apache.chemistry.opencmis.commons.spi.Holder;
+import org.apache.chemistry.opencmis.prodoc.InsertProDoc;
+import org.apache.chemistry.opencmis.prodoc.SesionProDoc;
 import org.apache.chemistry.opencmis.server.impl.ServerVersion;
 import org.apache.chemistry.opencmis.server.support.wrapper.CallContextAwareCmisService;
 import org.slf4j.Logger;

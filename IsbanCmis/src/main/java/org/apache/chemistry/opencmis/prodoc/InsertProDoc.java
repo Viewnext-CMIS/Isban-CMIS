@@ -1,13 +1,18 @@
-package org.apache.chemistry.opencmis.fileshare;
+package org.apache.chemistry.opencmis.prodoc;
 
 import org.apache.chemistry.opencmis.commons.data.Properties;
 import org.apache.chemistry.opencmis.commons.data.PropertyData;
 
 import prodoc.PDException;
 import prodoc.PDFolders;
-
+/**
+ * 
+ * @author Viewnext:Sergio Rodriguez Oyola
+ *
+ */
 public class InsertProDoc {
-	public InsertProDoc() {
+	
+	public InsertProDoc() {		
 		
 	}
 	/**

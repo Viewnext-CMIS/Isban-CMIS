@@ -45,5 +45,10 @@
 	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/lucene-queryparser-5.3.0.jar"/>
 	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/Prodoc.jar"/>
 	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/tika-app-1.10.jar"/>
+	<classpathentry excluding="**" kind="src" output="target/classes" path="src/main/resources">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
