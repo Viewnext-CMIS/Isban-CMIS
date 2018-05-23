@@ -223,7 +223,7 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     @Override
     public String createFolder(String repositoryId, Properties properties, String folderId, List<String> policies,
             Acl addAces, Acl removeAces, ExtensionsData extension) {
-        return getRepository().createFolder(getCallContext(), properties, folderId);
+        return getRepository().createFolder(getCallContext(), properties, folderId,sesProdoc);
     }
 
     @Override

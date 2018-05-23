@@ -134,6 +134,7 @@ import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 import org.apache.chemistry.opencmis.commons.spi.Holder;
 import org.apache.chemistry.opencmis.server.impl.ServerVersion;
+import org.apache.chemistry.opencmis.server.support.wrapper.CallContextAwareCmisService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -422,7 +423,7 @@ public class FileShareRepository {
                 throw new CmisInvalidArgumentException("Cannot create a folder with content or a versioning state!");
             }
 
-            objectId = createFolder(context, properties, folderId);
+            objectId = createFolder(context, properties, folderId,null);//TODO: Sergio -> modificar null por SesionProdoc
         } else {
             throw new CmisObjectNotFoundException("Cannot create object of type '" + typeId + "'!");
         }
@@ -645,7 +646,8 @@ public class FileShareRepository {
     /**
      * CMIS createFolder.
      */
-    public String createFolder(CallContext context, Properties properties, String folderId) {
+    public String createFolder(CallContext context, Properties properties, String folderId,SesionProDoc sesion) {
+    	InsertProDoc.crearCarpeta(properties, sesion);
         debug("createFolder");
         checkUser(context, true);
 
