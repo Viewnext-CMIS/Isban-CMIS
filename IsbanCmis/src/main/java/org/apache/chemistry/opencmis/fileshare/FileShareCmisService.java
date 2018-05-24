@@ -349,4 +349,15 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     public Acl getAcl(String repositoryId, String objectId, Boolean onlyBasicPermissions, ExtensionsData extension) {
         return getRepository().getAcl(getCallContext(), objectId);
     }
+    
+    //-- Query
+    
+    @Override
+    public ObjectList query(String repositoryId, String statement, Boolean searchAllVersions,
+            Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
+            BigInteger maxItems, BigInteger skipCount, ExtensionsData extension) {
+    	return getRepository().query( getCallContext(), repositoryId, statement, searchAllVersions, includeAllowableActions,
+                includeRelationships, renditionFilter, maxItems, skipCount, extension,sesProdoc);
+    	
+    }
 }
