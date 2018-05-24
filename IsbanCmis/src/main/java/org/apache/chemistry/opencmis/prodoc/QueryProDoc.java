@@ -20,9 +20,10 @@ public class QueryProDoc {
 	 * 
 	 * @param query
 	 * @param sesion
+	 * @param camposSelect 
 	 * @return
 	 */
-	public static List<Object> busquedaFolder(String query, DriverGeneric sesion,String docType) {
+	public static List<Object> busquedaFolder(String query, DriverGeneric sesion,String docType, List<String> camposSelect) {
 		makeQuery(sesion, query, true, docType);
 		return null;
 	}
@@ -32,9 +33,10 @@ public class QueryProDoc {
 	 * @param query
 	 * @param sesion
 	 * @param docType
+	 * @param camposSelect 
 	 * @return
 	 */
-	public static List<Object> busquedaDoc(String query, DriverGeneric sesion, String docType) {
+	public static List<Object> busquedaDoc(String query, DriverGeneric sesion, String docType, List<String> camposSelect) {
 		makeQuery(sesion, query, false, docType);
 		return null;
 	}

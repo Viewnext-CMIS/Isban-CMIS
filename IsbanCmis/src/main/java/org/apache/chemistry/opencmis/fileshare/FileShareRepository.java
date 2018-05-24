@@ -118,7 +118,6 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderContainerImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderListImpl;
-import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectListImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectParentDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PartialContentStreamImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PermissionDefinitionDataImpl;
@@ -428,43 +427,47 @@ public class FileShareRepository {
 	 * @return
 	 */
 
-	public ObjectList query(CallContext context, String repositoryId, String statement, Boolean searchAllVersions,
-			Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
-			BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc) {
-		
-		Vector<Object> listaSalida=new Vector<>();
+    public ObjectList query(CallContext context, String repositoryId, String statement, Boolean searchAllVersions,
+            Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
+            BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc) {
 
+        Vector<Object> listaSalida = new Vector<>();
 
-		HashMap<String, Object> paramBusqueda = QueryUtil.getPropertiesStatement(statement);
-		try {
-			if (paramBusqueda != null && paramBusqueda.get("FROM") != null) {
-				List<String> tipos = (List<String>) paramBusqueda.get("FROM");
-				for (String tipo : tipos) {
-					if (tipo.equalsIgnoreCase("document")) {
-						listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), "PD_DOCS"));
+        HashMap<String, Object> paramBusqueda = QueryUtil.getPropertiesStatement(statement);
+        List<String> camposSelect = new ArrayList<>();
+        camposSelect.addAll((List<String>) paramBusqueda.get("SELECT"));
+        try {
+            if (paramBusqueda != null && paramBusqueda.get("FROM") != null) {
+                List<String> tipos = (List<String>) paramBusqueda.get("FROM");
+                for (String tipo : tipos) {
+                    if (tipo.equalsIgnoreCase("document")) {
 
-					} else if (tipo.equalsIgnoreCase("folder")) {
-						listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), "PD_FOLDERS"));
-					} else {
-						PDObjDefs od = new PDObjDefs(sesProdoc.getMainSession());
-						od.Load(tipo);
-						String tipoObj = od.getClassType();
-						if (tipoObj.equals("document")) {
-							listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), tipo));
-						} else {
-							listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), tipo));
-						}
-					}
+                        listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), "PD_DOCS",
+                                camposSelect));
 
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		System.out.println(listaSalida.toString());
-		return null;
+                    } else if (tipo.equalsIgnoreCase("folder")) {
+                        listaSalida.addAll(
+                                QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), "PD_FOLDERS",camposSelect));
+                    } else {
+                        PDObjDefs od = new PDObjDefs(sesProdoc.getMainSession());
+                        od.Load(tipo);
+                        String tipoObj = od.getClassType();
+                        if (tipoObj.equals("document")) {
+                            listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), tipo,camposSelect));
+                        } else {
+                            listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), tipo,camposSelect));
+                        }
+                    }
 
-	}
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println(listaSalida.toString());
+        return null;
+
+    }
 
 	/**
 	 * Create* dispatch for AtomPub.
