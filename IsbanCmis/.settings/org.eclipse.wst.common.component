@@ -6,61 +6,58 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/.apt_generated"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/resources"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/test/java"/>
-        <dependent-module deploy-path="/" handle="module:/overlay/var/M2_REPO/org/apache/chemistry/opencmis/chemistry-opencmis-server-bindings-war/1.1.0/chemistry-opencmis-server-bindings-war-1.1.0.war?unpackFolder=target/m2e-wtp/overlays&amp;includes=**;META-INF/THIRD-PARTY-LICENSES&amp;excludes=index.html;css/**;images/**;web/**;WEB-INF/classes/sample-repository.properties;WEB-INF/token/**;WEB-INF/websphere/**">
-            <dependency-type>consumes</dependency-type>
-        </dependent-module>
         <dependent-module deploy-path="/" handle="module:/overlay/slf/?includes=**/**&amp;excludes=META-INF/MANIFEST.MF">
             <dependency-type>consumes</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="commons-codec-1.10.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-codec-1.10.jar">
+        <dependent-module archiveName="httpclient-4.5.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/httpclient-4.5.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="hsqldb.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/hsqldb.jar">
+        <dependent-module archiveName="commons-io-2.0.1.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/commons-io-2.0.1.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="commons-io-2.0.1.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-io-2.0.1.jar">
+        <dependent-module archiveName="lucene-queryparser-5.3.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/lucene-queryparser-5.3.0.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="lucene-queryparser-5.3.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/lucene-queryparser-5.3.0.jar">
+        <dependent-module archiveName="tika-app-1.10.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/tika-app-1.10.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="commons-net-3.6.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-net-3.6.jar">
+        <dependent-module archiveName="commons-net-3.6.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/commons-net-3.6.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="lucene-core-5.3.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/lucene-core-5.3.0.jar">
+        <dependent-module archiveName="hsqldb.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/hsqldb.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="derbyclient.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/derbyclient.jar">
+        <dependent-module archiveName="lucene-analyzers-common-5.3.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/lucene-analyzers-common-5.3.0.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="lucene-analyzers-common-5.3.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/lucene-analyzers-common-5.3.0.jar">
+        <dependent-module archiveName="Prodoc.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/Prodoc.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="log4j-1.2.16.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/log4j-1.2.16.jar">
+        <dependent-module archiveName="commons-io-2.5.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/commons-io-2.5.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="commons-io-2.5.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-io-2.5.jar">
+        <dependent-module archiveName="log4j-1.2.16.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/log4j-1.2.16.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="Prodoc.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/Prodoc.jar">
+        <dependent-module archiveName="httpmime-4.5.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/httpmime-4.5.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="httpcore-4.4.1.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/httpcore-4.4.1.jar">
+        <dependent-module archiveName="httpcore-4.4.1.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/httpcore-4.4.1.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="tika-app-1.10.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/tika-app-1.10.jar">
+        <dependent-module archiveName="lucene-core-5.3.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/lucene-core-5.3.0.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="commons-net-ftp-2.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-net-ftp-2.0.jar">
+        <dependent-module archiveName="commons-net-ftp-2.0.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/commons-net-ftp-2.0.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="commons-fileupload-1.2.2.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-fileupload-1.2.2.jar">
+        <dependent-module archiveName="derbyclient.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/derbyclient.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="httpclient-4.5.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/httpclient-4.5.jar">
+        <dependent-module archiveName="commons-codec-1.10.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/commons-codec-1.10.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
-        <dependent-module archiveName="httpmime-4.5.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/httpmime-4.5.jar">
+        <dependent-module archiveName="commons-fileupload-1.2.2.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/IsbanCmis/libsProDoc/commons-fileupload-1.2.2.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
         <property name="context-root" value="chemistry-opencmis-server-fileshare"/>
