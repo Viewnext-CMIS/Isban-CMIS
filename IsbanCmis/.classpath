@@ -28,27 +28,27 @@
 			<attribute name="optional" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-codec-1.10.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-fileupload-1.2.2.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-io-2.0.1.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-io-2.5.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-net-3.6.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/commons-net-ftp-2.0.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/derbyclient.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/hsqldb.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/httpclient-4.5.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/httpcore-4.4.1.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/httpmime-4.5.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/log4j-1.2.16.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/lucene-analyzers-common-5.3.0.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/lucene-core-5.3.0.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/lucene-queryparser-5.3.0.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/Prodoc.jar"/>
-	<classpathentry kind="lib" path="C:/Datos/NETBEANS/chemistry-opencmis-server-fileshare/lib/prodoc/tika-app-1.10.jar"/>
 	<classpathentry excluding="**" kind="src" output="target/classes" path="src/main/resources">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="libsProDoc/commons-codec-1.10.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/commons-fileupload-1.2.2.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/commons-io-2.0.1.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/commons-io-2.5.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/commons-net-3.6.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/commons-net-ftp-2.0.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/derbyclient.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/hsqldb.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/httpclient-4.5.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/httpcore-4.4.1.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/httpmime-4.5.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/log4j-1.2.16.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/lucene-analyzers-common-5.3.0.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/lucene-core-5.3.0.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/lucene-queryparser-5.3.0.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/Prodoc.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/tika-app-1.10.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

@@ -5,6 +5,7 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/.apt_generated"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/resources"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/test/java"/>
         <dependent-module deploy-path="/" handle="module:/overlay/var/M2_REPO/org/apache/chemistry/opencmis/chemistry-opencmis-server-bindings-war/1.1.0/chemistry-opencmis-server-bindings-war-1.1.0.war?unpackFolder=target/m2e-wtp/overlays&amp;includes=**;META-INF/THIRD-PARTY-LICENSES&amp;excludes=index.html;css/**;images/**;web/**;WEB-INF/classes/sample-repository.properties;WEB-INF/token/**;WEB-INF/websphere/**">
             <dependency-type>consumes</dependency-type>
         </dependent-module>
