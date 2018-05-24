@@ -14,10 +14,10 @@ public class QueryUtil {
 	static {
 		listaTradMetadatas = new HashMap<>();
 		listaTradMetadatas.put("cmis:name", "title");
-		listaTradMetadatas.put("cmis:objectId", "pdid");
-		listaTradMetadatas.put("cmis:parentId", "parentFoder");
-		listaTradMetadatas.put("cmis:contentStreamFileName", "fileName");
-		listaTradMetadatas.put("cmis:contentStreamMimeType", "mime");
+		listaTradMetadatas.put("cmis:objectid", "pdid");
+		listaTradMetadatas.put("cmis:parentid", "parentFoder");
+		listaTradMetadatas.put("cmis:contentstreamfilename", "fileName");
+		listaTradMetadatas.put("cmis:contentstreammimetype", "mime");
 		listaTradMetadatas = Collections.unmodifiableMap(listaTradMetadatas);
 	}
 
@@ -69,7 +69,7 @@ public class QueryUtil {
 		String[] aSelect = select.split(",");
 		List<String> salida = new ArrayList<>();
 		for (String a : aSelect) {
-	
+		    a=a.trim();
 			salida.add((listaTradMetadatas.get(a) != null) ? listaTradMetadatas.get(a) : a);
 
 		}
