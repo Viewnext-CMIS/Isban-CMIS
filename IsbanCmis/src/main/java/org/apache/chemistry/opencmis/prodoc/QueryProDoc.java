@@ -1,7 +1,8 @@
 package org.apache.chemistry.opencmis.prodoc;
 
+import java.util.List;
+
 import prodoc.DriverGeneric;
-import prodoc.PDDocs;
 import prodoc.Query;
 
 /**
@@ -21,7 +22,7 @@ public class QueryProDoc {
 	 * @param sesion
 	 * @return
 	 */
-	public static String busquedaFolder(String query, DriverGeneric sesion,String docType) {
+	public static List<Object> busquedaFolder(String query, DriverGeneric sesion,String docType) {
 		makeQuery(sesion, query, true, docType);
 		return null;
 	}
@@ -33,11 +34,14 @@ public class QueryProDoc {
 	 * @param docType
 	 * @return
 	 */
-	public static String busquedaDoc(String query, DriverGeneric sesion, String docType) {
+	public static List<Object> busquedaDoc(String query, DriverGeneric sesion, String docType) {
 		makeQuery(sesion, query, false, docType);
 		return null;
 	}
-	
+	/**
+	 * 
+	 * @return
+	 */
 	public static String busquedaVersion() {
 		return null;
 

@@ -1,0 +1,51 @@
+// ------------------------------------------------------------------
+// Transitive dependencies of this project determined from the
+// maven pom organized by organization.
+// ------------------------------------------------------------------
+
+OpenCMIS FileShare Server Implementation
+
+
+From: 'an unknown organization'
+  - AntLR Parser Generator (http://www.antlr.org/) antlr:antlr:jar:2.7.7
+    License: BSD License  (http://www.antlr.org/license.html)
+  - ANTLR StringTemplate (http://www.stringtemplate.org) org.antlr:stringtemplate:jar:3.2.1
+    License: BSD licence  (http://antlr.org/license.html)
+
+From: 'ANTLR' (http://www.antlr.org)
+  - ANTLR 3 Runtime (http://www.antlr.org) org.antlr:antlr-runtime:jar:3.5
+    License: BSD licence  (http://antlr.org/license.html)
+
+From: 'Apache Software Foundation' (http://www.apache.org)
+  - Apache Log4j API (http://logging.apache.org/log4j/2.x/log4j-api/) org.apache.logging.log4j:log4j-api:jar:2.6.1
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Apache Log4j Core (http://logging.apache.org/log4j/2.x/log4j-core/) org.apache.logging.log4j:log4j-core:jar:2.6.1
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Apache Log4j SLF4J Binding (http://logging.apache.org/log4j/2.x/log4j-slf4j-impl/) org.apache.logging.log4j:log4j-slf4j-impl:jar:2.6.1
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+From: 'Codehaus' (http://www.codehaus.org/)
+  - Woodstox (http://woodstox.codehaus.org) org.codehaus.woodstox:woodstox-core-asl:jar:4.4.1
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+From: 'fasterxml.com' (http://fasterxml.com)
+  - Stax2 API (http://wiki.fasterxml.com/WoodstoxStax2) org.codehaus.woodstox:stax2-api:bundle:3.1.4
+    License: The BSD License  (http://www.opensource.org/licenses/bsd-license.php)
+
+From: 'QOS.ch' (http://www.qos.ch)
+  - SLF4J API Module (http://www.slf4j.org) org.slf4j:slf4j-api:jar:1.7.21
+    License: MIT License  (http://www.opensource.org/licenses/mit-license.php)
+
+From: 'The Apache Software Foundation' (https://www.apache.org/)
+  - OpenCMIS Commons API (https://chemistry.apache.org/java/chemistry-opencmis-commons/chemistry-opencmis-commons-api/) org.apache.chemistry.opencmis:chemistry-opencmis-commons-api:jar:1.1.0
+    License: Apache 2  (https://www.apache.org/licenses/LICENSE-2.0.txt)
+  - OpenCMIS Commons Implementation (https://chemistry.apache.org/java/chemistry-opencmis-commons/chemistry-opencmis-commons-impl/) org.apache.chemistry.opencmis:chemistry-opencmis-commons-impl:jar:1.1.0
+    License: Apache 2  (https://www.apache.org/licenses/LICENSE-2.0.txt)
+  - OpenCMIS Server Implementation WAR packaging (https://chemistry.apache.org/java/chemistry-opencmis-server/chemistry-opencmis-server-bindings-war/) org.apache.chemistry.opencmis:chemistry-opencmis-server-bindings-war:war:1.1.0
+    License: Apache 2  (https://www.apache.org/licenses/LICENSE-2.0.txt)
+  - OpenCMIS Server Support (https://chemistry.apache.org/java/chemistry-opencmis-server/chemistry-opencmis-server-support/) org.apache.chemistry.opencmis:chemistry-opencmis-server-support:jar:1.1.0
+    License: Apache 2  (https://www.apache.org/licenses/LICENSE-2.0.txt)
+
+
+
+

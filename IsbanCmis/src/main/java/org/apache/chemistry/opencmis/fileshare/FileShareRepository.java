@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -117,6 +118,7 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderContainerImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderListImpl;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectListImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectParentDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PartialContentStreamImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PermissionDefinitionDataImpl;
@@ -136,6 +138,7 @@ import org.apache.chemistry.opencmis.commons.impl.server.ObjectInfoImpl;
 import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 import org.apache.chemistry.opencmis.commons.spi.Holder;
+import org.apache.chemistry.opencmis.isbanutil.QueryUtil;
 import org.apache.chemistry.opencmis.prodoc.InsertProDoc;
 import org.apache.chemistry.opencmis.prodoc.QueryProDoc;
 import org.apache.chemistry.opencmis.prodoc.SesionProDoc;
@@ -143,7 +146,6 @@ import org.apache.chemistry.opencmis.server.impl.ServerVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import prodoc.PDException;
 import prodoc.PDObjDefs;
 
 /**
@@ -429,24 +431,37 @@ public class FileShareRepository {
 	public ObjectList query(CallContext context, String repositoryId, String statement, Boolean searchAllVersions,
 			Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
 			BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc) {
-		if (statement.contains("cmis:document")) {
-			QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), "PD_DOCS");
+		
+		Vector<Object> listaSalida=new Vector<>();
 
-		} else if (statement.contains("cmis:folder")) {
-			QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(),"PD_FOLDERS");
-		} 
-//			else {
-//				PDObjDefs od = new PDObjDefs(sesProdoc.getMainSession());
-//				String tipo = ""; // TODO: Sergio-> extracTipo()
-//				od.Load(tipo);
-//				String tipoObj = od.getClassType();
-//				if (tipoObj.equals("document")) {
-//
-//				} else {
-//
-//				}
-//			}
 
+		HashMap<String, Object> paramBusqueda = QueryUtil.getPropertiesStatement(statement);
+		try {
+			if (paramBusqueda != null && paramBusqueda.get("FROM") != null) {
+				List<String> tipos = (List<String>) paramBusqueda.get("FROM");
+				for (String tipo : tipos) {
+					if (tipo.equalsIgnoreCase("document")) {
+						listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), "PD_DOCS"));
+
+					} else if (tipo.equalsIgnoreCase("folder")) {
+						listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), "PD_FOLDERS"));
+					} else {
+						PDObjDefs od = new PDObjDefs(sesProdoc.getMainSession());
+						od.Load(tipo);
+						String tipoObj = od.getClassType();
+						if (tipoObj.equals("document")) {
+							listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), tipo));
+						} else {
+							listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), tipo));
+						}
+					}
+
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println(listaSalida.toString());
 		return null;
 
 	}
