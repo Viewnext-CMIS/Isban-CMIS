@@ -440,19 +440,19 @@ public class FileShareRepository {
             if (paramBusqueda != null && paramBusqueda.get("FROM") != null) {
                 List<String> tipos = (List<String>) paramBusqueda.get("FROM");
                 for (String tipo : tipos) {
-                    if (tipo.equalsIgnoreCase("document")) {
+                    if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
 
                         listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), "PD_DOCS",
                                 camposSelect));
 
-                    } else if (tipo.equalsIgnoreCase("folder")) {
+                    } else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDER")) {
                         listaSalida.addAll(
-                                QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), "PD_FOLDERS",camposSelect));
+                                QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), "PD_FOLDER",camposSelect));
                     } else {
                         PDObjDefs od = new PDObjDefs(sesProdoc.getMainSession());
                         od.Load(tipo);
                         String tipoObj = od.getClassType();
-                        if (tipoObj.equals("document")) {
+                        if (tipoObj.equalsIgnoreCase("document")) {
                             listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), tipo,camposSelect));
                         } else {
                             listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), tipo,camposSelect));

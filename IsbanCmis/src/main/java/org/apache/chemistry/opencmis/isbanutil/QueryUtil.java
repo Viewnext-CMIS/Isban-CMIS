@@ -36,9 +36,9 @@ public class QueryUtil {
 	private static List<String> getParamFrom(String statement) {
 		List<String> listaTipos = new ArrayList<>();
 		String[] afrom;
-		if (statement.contains("where")) {
+		if (statement.toLowerCase().contains("where")) {
 			afrom = statement.substring(statement.toLowerCase().indexOf(" from ")+6, statement.toLowerCase().indexOf(" where ")).split(",");
-		}else if (statement.contains("order by")){
+		}else if (statement.toLowerCase().contains("order by")){
 			afrom = statement.substring(statement.toLowerCase().indexOf(" from ")+6, statement.toLowerCase().indexOf(" order by ")).split(",");
 		}else {
 			afrom = statement.substring(statement.toLowerCase().indexOf(" from ")+6, statement.toLowerCase().length()).split(",");
