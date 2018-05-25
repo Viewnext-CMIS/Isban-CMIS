@@ -431,7 +431,7 @@ public class FileShareRepository {
             Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
             BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc) {
 
-        Vector<Object> listaSalida = new Vector<>();
+        Vector<String> listaSalida = new Vector<>();
 
         HashMap<String, Object> paramBusqueda = QueryUtil.getPropertiesStatement(statement);
         List<String> camposSelect = new ArrayList<>();
@@ -445,9 +445,9 @@ public class FileShareRepository {
                         listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), "PD_DOCS",
                                 camposSelect));
 
-                    } else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDER")) {
+                    } else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
                         listaSalida.addAll(
-                                QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), "PD_FOLDER",camposSelect));
+                                QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), "PD_FOLDERS",camposSelect));
                     } else {
                         PDObjDefs od = new PDObjDefs(sesProdoc.getMainSession());
                         od.Load(tipo);
@@ -464,10 +464,34 @@ public class FileShareRepository {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println(listaSalida.toString());
+        mostrar(listaSalida,camposSelect);
         return null;
 
     }
+
+	private void mostrar(Vector<String> listaSalida,List<String> camposSelect  ) {
+		String cabecera="";
+		for(String a : camposSelect) {
+			if(cabecera!="") {
+				cabecera+=" || ";
+			}
+			cabecera+=a;
+		}
+		System.out.println(cabecera);
+		System.out.println("_____________________________________");
+		for(String a : listaSalida  ) {
+			String salida="";
+			String[] mostrar = a.split("&&");
+			for(String x : mostrar) {
+				if(salida!="") {
+					salida+=" || ";
+				}
+				salida+=x;
+			}
+			System.out.println(salida);
+		}
+		
+	}
 
 	/**
 	 * Create* dispatch for AtomPub.

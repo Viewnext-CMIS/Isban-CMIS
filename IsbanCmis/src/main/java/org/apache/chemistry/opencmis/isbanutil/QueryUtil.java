@@ -8,14 +8,14 @@ import java.util.Map;
 
 public class QueryUtil {
 
-	private static Map<String, String> listaTradMetadatas;
+	public static Map<String, String> listaTradMetadatas;
 	static {
 		listaTradMetadatas = new HashMap<>();
-		listaTradMetadatas.put("cmis:name", "title");
-		listaTradMetadatas.put("cmis:objectid", "pdid");
-		listaTradMetadatas.put("cmis:parentid", "parentFoder");
-		listaTradMetadatas.put("cmis:contentstreamfilename", "fileName");
-		listaTradMetadatas.put("cmis:contentstreammimetype", "mime");
+		listaTradMetadatas.put("cmis:name", "Title");
+		listaTradMetadatas.put("cmis:objectid", "PDId");
+		listaTradMetadatas.put("cmis:parentid", "ParentId");
+		listaTradMetadatas.put("cmis:createdby", "PDAutor");
+		listaTradMetadatas.put("cmis:creationdate", "PDDate");
 		listaTradMetadatas = Collections.unmodifiableMap(listaTradMetadatas);
 	}
 
