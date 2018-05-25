@@ -1,5 +1,8 @@
 package org.apache.chemistry.opencmis.prodoc;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
@@ -93,6 +96,7 @@ public class QueryProDoc {
 	        return null;
 	}
 
+	
 	/**
 	 * 
 	 * @param query
@@ -102,16 +106,19 @@ public class QueryProDoc {
 	 * @return
 	 */
 	public static List<Object> busquedaDoc(String query, DriverGeneric sesion, String docType, List<String> camposSelect) {
-		makeQuery(sesion, query, false, docType);
+		
+	    makeQuery(sesion, query, false, docType);
 		return null;
 	}
+	
+	
 	/**
 	 * 
 	 * @return
 	 */
 	public static String busquedaVersion() {
-		return null;
 		
+	    return null;		
 	}
 
 
@@ -199,6 +206,11 @@ public class QueryProDoc {
 	}
 
 
+	/**
+	 * 
+	 * @param strFrom
+	 * @return
+	 */
 	private static Vector obtenerVectorString(String strFrom){
 	    
 	    String[] vecStrTables = strFrom.split(",");
@@ -212,6 +224,14 @@ public class QueryProDoc {
 	}
 
 
+	/**
+	 * Metodo para obtener la estructura record dependiendo del tipo de objeto y el dovType
+	 * 
+	 * @param MainSession
+	 * @param isFolder
+	 * @param docType
+	 * @return
+	 */
 	private static Record getRecordStruct(DriverGeneric MainSession, boolean isFolder, String docType){
 	    
 	    Record pFields = null;
@@ -232,9 +252,18 @@ public class QueryProDoc {
 	}
 
 
+	/**
+	 * Metodo que obtiene las condiciones de la query
+	 * 
+	 * @param sesion
+	 * @param strConditions
+	 * @param isFolder
+	 * @param docType
+	 * @return
+	 */
 	private static Conditions getConds(DriverGeneric sesion, String strConditions, boolean isFolder, String docType){
 
-	    Condition cond;
+	    Condition cond = null;
 	    Conditions conds = new Conditions();    
 	    //String strAux = strConditions;
 	    
@@ -263,44 +292,196 @@ public class QueryProDoc {
 	        String strOper = vCond[1].trim();
 	        int valOper = valOperComp.get(strOper);
 	        
-	// Hay que crear strValor segun el tipo de datos que sea (String, Integer, Boolean o Date)
-	// Habra que comprobar si vienen comillas (String) o no --> Si no vienen comprobar si es "true" o "false"
+//	// Hay que crear strValor segun el tipo de datos que sea (String, Integer, Boolean o Date)
+//	// Habra que comprobar si vienen comillas (String) o no --> Si no vienen comprobar si es "true" o "false"
+//	        int attrType = 0;
+//	        if(isFolder) {
+//	            try {
+//                    PDFolders fol = new PDFolders(sesion);
+//                    Attribute attr = fol.getRecordStructPDFolder().getAttr(strCampo);
+//                    attrType = attr.getType();
+//                } catch (PDException e) {
+//                    e.printStackTrace();
+//                }
+//	        }else {
+//	            
+//                try {
+//                    PDDocs doc = new PDDocs(sesion);
+//                    doc.setDocType(docType);
+//                    Attribute attr = doc.getRecordStruct().getAttr(strCampo);
+//                    attrType = attr.getType();
+//                } catch (PDException e) {
+//                    e.printStackTrace();
+//                }	            
+//	        }
+//	        
+//	        
+////	        public static final int tINTEGER  =0;
+////	        public static final int tFLOAT    =1;
+////	        public static final int tSTRING   =2;
+////	        public static final int tDATE     =3;
+////	        public static final int tBOOLEAN  =4;
+//	        
+//	        switch (attrType) {
+//            case 0:
+//                Integer sValor = Integer.parseInt(vCond[2].trim());
+//                try {
+//                    cond = new Condition(strCampo, valOper, sValor);
+//                } catch (PDException e) {
+//                    e.printStackTrace();
+//                }
+//                break;
+//            case 1:
+//                Float fValor = Float.parseFloat(vCond[2].trim());
+//                try {
+//                    cond = new Condition(strCampo, valOper, fValor);
+//                } catch (PDException e) {
+//                    e.printStackTrace();
+//                }
+//                break;
+//            case 2:
+//                String strValor = vCond[2].trim();
+//                try {
+//                    cond = new Condition(strCampo, valOper, strValor);
+//                } catch (PDException e) {
+//                    e.printStackTrace();
+//                }
+//                break;
+//            case 3:
+//                SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");                                
+//                try {
+//                    Date dValor = formato.parse(vCond[2].trim());
+//                    cond = new Condition(strCampo, valOper, dValor);
+//                } catch (PDException e) {
+//                    e.printStackTrace();
+//                }catch (ParseException e) {
+//                    e.printStackTrace();
+//                }
+//                break;
+//            case 4:
+//                Boolean bValor = Boolean.parseBoolean(vCond[2].trim());
+//                try {
+//                    cond = new Condition(strCampo, valOper, bValor);
+//                } catch (PDException e) {
+//                    // TODO Auto-generated catch block
+//                    e.printStackTrace();
+//                }
+//                break;
+//                
+//            default:
+//                break;
+//            }
+//	        
+//	        
+//	        
+////	        String strValor = vCond[2].trim();
+////	        for (int i = 3; i < vCond.length; i++) {
+////	            strValor = strValor.concat(" ");
+////	            strValor = strValor.concat(vCond[i]);
+////	        }
+//	       
+//	        //	            cond = new Condition(strCampo, valOper, strValor);
 	        
-	        if(isFolder) {
-	            try {
-                    PDFolders fol = new PDFolders(sesion);
-                } catch (PDException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-	        }else {
-	            
-                try {
-                    PDDocs doc = new PDDocs(sesion);
-                    doc.setDocType(docType);
-                } catch (PDException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }	            
-	        }
+	        cond = getCond(strCampo, valOper, vCond[2].trim(), sesion, isFolder, docType);
+            conds.addCondition(cond);
 	        
-	        String strValor = vCond[2].trim();
-	        for (int i = 3; i < vCond.length; i++) {
-	            strValor = strValor.concat(" ");
-	            strValor = strValor.concat(vCond[i]);
-	        }
-	       
-	        try {
-	            cond = new Condition(strCampo, valOper, strValor);
-	            conds.addCondition(cond);
-	        } catch (PDException ex) {
-	            Logger.getLogger(QueryProDoc.class.getName()).log(Level.SEVERE, null, ex);
-	        }
-	        System.out.println(">>>>> strCampo : -->" + strCampo + "<--");
-	        System.out.println(">>>>> strValor : -->" + strValor + "<--");
 	    } 
 	    
 	    return conds;
 	}
-	
+
+
+	/**
+	 * Metodo que devuelve una condicion  
+	 * 
+	 * @param strCampo
+	 * @param valOper
+	 * @param strValorCampo
+	 * @param sesion
+	 * @param isFolder
+	 * @param docType
+	 * @return
+	 */
+   private static Condition getCond(String strCampo, Integer valOper, String strValorCampo, DriverGeneric sesion, boolean isFolder, String docType){
+
+        Condition cond = null;
+
+            
+    // Hay que crear strValor segun el tipo de datos que sea (String, Integer, Boolean o Date)
+    // Habra que comprobar si vienen comillas (String) o no --> Si no vienen comprobar si es "true" o "false"
+        int attrType = 0;
+        if(isFolder) {
+            try {
+                PDFolders fol = new PDFolders(sesion);
+                Attribute attr = fol.getRecordStructPDFolder().getAttr(strCampo);
+                attrType = attr.getType();
+            } catch (PDException e) {
+                e.printStackTrace();
+            }
+        }else {
+            
+            try {
+                PDDocs doc = new PDDocs(sesion);
+                doc.setDocType(docType);
+                Attribute attr = doc.getRecordStruct().getAttr(strCampo);
+                attrType = attr.getType();
+            } catch (PDException e) {
+                e.printStackTrace();
+            }               
+        }
+        
+        
+        switch (attrType) {
+            case 0:
+                Integer sValor = Integer.parseInt(strValorCampo);
+                try {
+                    cond = new Condition(strCampo, valOper, sValor);
+                } catch (PDException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case 1:
+                Float fValor = Float.parseFloat(strValorCampo);
+                try {
+                    cond = new Condition(strCampo, valOper, fValor);
+                } catch (PDException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case 2:
+                String strValor = strValorCampo;
+                try {
+                    cond = new Condition(strCampo, valOper, strValor);
+                } catch (PDException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case 3:
+                SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");                                
+                try {
+                    Date dValor = formato.parse(strValorCampo);
+                    cond = new Condition(strCampo, valOper, dValor);
+                } catch (PDException e) {
+                    e.printStackTrace();
+                }catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case 4:
+                Boolean bValor = Boolean.parseBoolean(strValorCampo);
+                try {
+                    cond = new Condition(strCampo, valOper, bValor);
+                } catch (PDException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                break;
+                
+            default:
+                break;
+        }
+            	            	          	            	       
+        
+        return cond;
+    }
 }
