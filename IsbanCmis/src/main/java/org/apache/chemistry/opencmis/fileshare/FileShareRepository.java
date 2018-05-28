@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -145,6 +147,15 @@ import org.apache.chemistry.opencmis.server.impl.ServerVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.parser.CCJSqlParserManager;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.select.Join;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
+import prodoc.DriverGeneric;
+import prodoc.PDException;
 import prodoc.PDObjDefs;
 
 /**
@@ -411,86 +422,95 @@ public class FileShareRepository {
 		return typeManager.getTypeDefinition(context, typeId);
 	}
 
+	public ObjectList query(CallContext context, String repositoryId, String statement, Boolean searchAllVersions,
+			Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
+			BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc) {
+		CCJSqlParserManager managerSql = new CCJSqlParserManager();
+		try {
+			Vector<String> listaSalida = new Vector<>();
+			
+			String query = QueryUtil.adaptarAProdoc(statement);
+			Statement x = managerSql.parse(new StringReader(query));
+			if (x instanceof Select) {
+				PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
+				FromItem from = selectStatement.getFromItem();
+				listaSalida.addAll(goToQuery(from.toString(), statement, sesProdoc.getMainSession(), selectStatement));
+				Iterator it = selectStatement.getJoins().iterator();
+				while (it.hasNext()) {
+					Join j = (Join) it.next();
+					listaSalida.addAll(goToQuery(j.toString(), statement, sesProdoc.getMainSession(), selectStatement));
+				}
+
+			}
+			mostrar(listaSalida, null);
+
+		} catch (JSQLParserException | PDException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+
+	}
 	/**
 	 * 
-	 * @param context
-	 * @param repositoryId
+	 * @param tipo
 	 * @param statement
-	 * @param searchAllVersions
-	 * @param includeAllowableActions
-	 * @param includeRelationships
-	 * @param renditionFilter
-	 * @param maxItems
-	 * @param skipCount
-	 * @param extension
-	 * @param sesProdoc
+	 * @param sesion
+	 * @param selectStatement
 	 * @return
+	 * @throws PDException
 	 */
+	private Vector<String> goToQuery(String tipo, String statement, DriverGeneric sesion, PlainSelect selectStatement)
+			throws PDException {
+		Vector<String> listaSalida = new Vector<>();
+		if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
 
-    public ObjectList query(CallContext context, String repositoryId, String statement, Boolean searchAllVersions,
-            Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
-            BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc) {
+			listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesion, "PD_DOCS", selectStatement));
 
-        Vector<String> listaSalida = new Vector<>();
-
-        HashMap<String, Object> paramBusqueda = QueryUtil.getPropertiesStatement(statement);
-        List<String> camposSelect = new ArrayList<>();
-        camposSelect.addAll((List<String>) paramBusqueda.get("SELECT"));
-        try {
-            if (paramBusqueda != null && paramBusqueda.get("FROM") != null) {
-                List<String> tipos = (List<String>) paramBusqueda.get("FROM");
-                for (String tipo : tipos) {
-                    if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
-
-                        listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), "PD_DOCS",
-                                camposSelect));
-
-                    } else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
-                        listaSalida.addAll(
-                                QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), "PD_FOLDERS",camposSelect));
-                    } else {
-                        PDObjDefs od = new PDObjDefs(sesProdoc.getMainSession());
-                        od.Load(tipo);
-                        String tipoObj = od.getClassType();
-                        if (tipoObj.equalsIgnoreCase("document")) {
-                            listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesProdoc.getMainSession(), tipo,camposSelect));
-                        } else {
-                            listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesProdoc.getMainSession(), tipo,camposSelect));
-                        }
-                    }
-
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        mostrar(listaSalida,camposSelect);
-        return null;
-
-    }
-
-	private void mostrar(Vector<String> listaSalida,List<String> camposSelect  ) {
-		String cabecera="";
-		for(String a : camposSelect) {
-			if(cabecera!="") {
-				cabecera+=" || ";
+		} else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
+			listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesion, "PD_FOLDERS", null));// TODO: Cambiar el
+																									// metodo
+		} else {
+			PDObjDefs od = new PDObjDefs(sesion);
+			od.Load(tipo);
+			String tipoObj = od.getClassType();
+			if (tipoObj.equalsIgnoreCase("document")) {
+				listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesion, tipo, selectStatement));
+			} else {
+				listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesion, "PD_FOLDERS", null));
 			}
-			cabecera+=a;
+		}
+		return listaSalida;
+	}
+	
+
+	/**
+	 * Solo para pruebas
+	 * @param listaSalida
+	 * @param camposSelect
+	 */
+	private void mostrar(Vector<String> listaSalida, List<String> camposSelect) {
+		String cabecera = "";
+		for (String a : camposSelect) {
+			if (cabecera != "") {
+				cabecera += " || ";
+			}
+			cabecera += a;
 		}
 		System.out.println(cabecera);
 		System.out.println("_____________________________________");
-		for(String a : listaSalida  ) {
-			String salida="";
+		for (String a : listaSalida) {
+			String salida = "";
 			String[] mostrar = a.split("&&");
-			for(String x : mostrar) {
-				if(salida!="") {
-					salida+=" || ";
+			for (String x : mostrar) {
+				if (salida != "") {
+					salida += " || ";
 				}
-				salida+=x;
+				salida += x;
 			}
 			System.out.println(salida);
 		}
-		
+
 	}
 
 	/**
