@@ -37,12 +37,12 @@ public class QueryUtil {
 	};
 
 	public static String traduccionCmis(String campo) {
-		return listaTradMetadatas.get(campo.toLowerCase())!=null? listaTradMetadatas.get(campo.toLowerCase()) : campo;
+		return listaTradMetadatas.get(campo)!=null? listaTradMetadatas.get(campo) : campo;
 		
 	}
 	
 	public static String adaptarAProdoc(String select) {
-		
+		select= select.replace(",", " , ");
 		for(String key : listaTradMetadatas.keySet()) {
 			select=select.replace(key, traduccionCmis(key));
 		}
