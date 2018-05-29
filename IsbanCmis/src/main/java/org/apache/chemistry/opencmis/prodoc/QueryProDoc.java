@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import org.apache.chemistry.opencmis.isbanutil.QueryUtil;
 
 import net.sf.jsqlparser.expression.BinaryExpression;
+import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.statement.select.FromItem;
@@ -166,35 +167,14 @@ public class QueryProDoc {
 
         List camposSelect = selectStatement.getSelectItems();
         FromItem table = selectStatement.getFromItem();
-//        BinaryExpression where = (BinaryExpression) selectStatement.getWhere();
         List order = selectStatement.getOrderByElements();
 
         String pTable;
         pTable = docType;
 
         Record pFields = doc.getRecordStruct();
-        Conditions pWhere = new Conditions();
-        
-        if (selectStatement.getWhere() instanceof AndExpression || selectStatement.getWhere() instanceof OrExpression) {
-            
-        }else {
-            BinaryExpression where = (BinaryExpression) selectStatement.getWhere();
-            
-            if (where != null) {
 
-                String campo = where.getLeftExpression().toString();
-                String oper = where.getStringExpression().toString();
-                int valOper = valOperComp.get(oper);
-                String valor = where.getRightExpression().toString();
-
-                Condition cond = getCond(campo, valOper, valor, sesion, false, docType);
-                pWhere.addCondition(cond);
-            }
-        }
-        
-        
-        
-        
+        Conditions condProdoc = getConditions(selectStatement.getWhere(), null, sesion, false, docType);
 
         String pOrder = null;
         if (order != null) {
@@ -209,7 +189,7 @@ public class QueryProDoc {
             }
         }
 
-        Query queryOPD = new Query(pTable, pFields, pWhere, pOrder);
+        Query queryOPD = new Query(pTable, pFields, condProdoc, pOrder);
 
         Cursor Cur = doc.getDrv().OpenCursor(queryOPD);
 
@@ -221,8 +201,6 @@ public class QueryProDoc {
             Attribute attr = record.nextAttr();
 
             while (attr != null) {
-
-                System.out.println("- Atributo " + attr.getName());
 
                 Iterator it = camposSelect.iterator();
 
@@ -240,6 +218,8 @@ public class QueryProDoc {
                 attr = record.nextAttr();
             }
 
+            System.out.println(">>>>>   " + recordString);
+
             result.add(recordString);
             record = doc.getDrv().NextRec(Cur);
         }
@@ -247,6 +227,56 @@ public class QueryProDoc {
         doc.getDrv().CloseCursor(Cur);
 
         return result;
+    }
+
+    /**
+     * 
+     * @param where
+     * @param padre
+     * @param sesion
+     * @param isFolder
+     * @param docType
+     * @return
+     */
+    private static Conditions getConditions(Expression where, Conditions padre, DriverGeneric sesion, boolean isFolder,
+            String docType) {
+        if (where instanceof AndExpression) {
+            Conditions and = new Conditions();
+            AndExpression andEx = (AndExpression) where;
+            and = getConditions(andEx.getLeftExpression(), and, sesion, isFolder, docType);
+            and = getConditions(andEx.getRightExpression(), and, sesion, isFolder, docType);
+            if (padre == null) {
+                padre = and;
+            } else {
+                padre.addCondition(and);
+            }
+        } else if (where instanceof OrExpression) {
+            Conditions or = new Conditions();
+            OrExpression orEx = (OrExpression) where;
+            or.setOperatorAnd(false);
+            or = getConditions(orEx.getLeftExpression(), or, sesion, isFolder, docType);
+            or = getConditions(orEx.getRightExpression(), or, sesion, isFolder, docType);
+            if (padre == null) {
+                padre = or;
+            } else {
+                padre.addCondition(or);
+            }
+        } else {
+            BinaryExpression be = (BinaryExpression) where;
+            String campo = be.getLeftExpression().toString();
+            String oper = be.getStringExpression().toString();
+            int valOper = valOperComp.get(oper);
+            String valor = be.getRightExpression().toString();
+
+            Condition prodocCond = getCond(campo, valOper, valor, sesion, isFolder, docType);
+            if (padre == null) {
+                padre = new Conditions();
+            }
+            padre.addCondition(prodocCond);
+
+        }
+
+        return padre;
     }
 
     /**
@@ -504,9 +534,11 @@ public class QueryProDoc {
             }
             break;
         case 2:
-            String strValor = strValorCampo.substring(1, strValorCampo.length() - 1); // Eliminamos las comillas
+            // String strValor = strValorCampo.substring(1, strValorCampo.length() - 1); //
+            // Eliminamos las comillas
+
             try {
-                cond = new Condition(strCampo, valOper, strValor);
+                cond = new Condition(strCampo, valOper, strValorCampo);
             } catch (PDException e) {
                 e.printStackTrace();
             }
@@ -531,7 +563,18 @@ public class QueryProDoc {
                 e.printStackTrace();
             }
             break;
-
+        case 5:
+            SimpleDateFormat formato2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String strValor = strValorCampo.substring(1, strValorCampo.length() - 1); // Eliminamos las comillas
+            try {
+                Date dValor = formato2.parse(strValor);
+                cond = new Condition(strCampo, valOper, strValorCampo);
+            } catch (PDException e) {
+                e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            break;
         default:
             break;
         }
