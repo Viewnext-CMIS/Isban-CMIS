@@ -428,17 +428,20 @@ public class FileShareRepository {
 		CCJSqlParserManager managerSql = new CCJSqlParserManager();
 		try {
 			Vector<String> listaSalida = new Vector<>();
-			
+
 			String query = QueryUtil.adaptarAProdoc(statement);
 			Statement x = managerSql.parse(new StringReader(query));
 			if (x instanceof Select) {
 				PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
 				FromItem from = selectStatement.getFromItem();
 				listaSalida.addAll(goToQuery(from.toString(), statement, sesProdoc.getMainSession(), selectStatement));
-				Iterator it = selectStatement.getJoins().iterator();
-				while (it.hasNext()) {
-					Join j = (Join) it.next();
-					listaSalida.addAll(goToQuery(j.toString(), statement, sesProdoc.getMainSession(), selectStatement));
+				if (!selectStatement.getJoins().isEmpty()) {
+					Iterator it = selectStatement.getJoins().iterator();
+					while (it.hasNext()) {
+						Join j = (Join) it.next();
+						listaSalida.addAll(
+								goToQuery(j.toString(), statement, sesProdoc.getMainSession(), selectStatement));
+					}
 				}
 
 			}
@@ -451,6 +454,7 @@ public class FileShareRepository {
 		return null;
 
 	}
+
 	/**
 	 * 
 	 * @param tipo
@@ -482,10 +486,10 @@ public class FileShareRepository {
 		}
 		return listaSalida;
 	}
-	
 
 	/**
 	 * Solo para pruebas
+	 * 
 	 * @param listaSalida
 	 * @param camposSelect
 	 */

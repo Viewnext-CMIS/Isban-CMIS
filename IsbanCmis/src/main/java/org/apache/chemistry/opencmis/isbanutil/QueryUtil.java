@@ -36,19 +36,57 @@ public class QueryUtil {
 		}
 	};
 
-	public static String traduccionCmis(String campo) {
-		return listaTradMetadatas.get(campo)!=null? listaTradMetadatas.get(campo) : campo;
-		
+	public static Integer getProdocOper(String operador) {
+		return valOperComp.get(operador.trim()) != null ? valOperComp.get(operador.trim()) : null;
 	}
-	
+
+	public static String traduccionCmis(String campo) {
+		return listaTradMetadatas.get(campo) != null ? listaTradMetadatas.get(campo) : campo;
+
+	}
+
 	public static String adaptarAProdoc(String select) {
-		select= select.replace(",", " , ");
-		for(String key : listaTradMetadatas.keySet()) {
-			select=select.replace(key, traduccionCmis(key));
+		select = select.replace(",", " , ");
+		for (String key : listaTradMetadatas.keySet()) {
+			select = select.replace(key, traduccionCmis(key));
 		}
-		select=select.replace("cmis:", "");
+		select = select.replace("cmis:", "");
+		boolean encontrado=false;
+		if (select.contains("contains(")) {
+			select = getContains(select, "contains(");
+			encontrado=true;
+		} else if (select.contains("contains (")) {
+			select = getContains(select, "contains (");
+			encontrado=true;
+		} else if (select.contains("Contains (")) {
+			select = getContains(select, "Contains (");
+			encontrado=true;
+		} else if (select.contains("Contains(")) {
+			select = getContains(select, "Contains(");
+			encontrado=true;
+		} else if (select.contains("CONTAINS(")) {
+			select = getContains(select, "CONTAINS(");
+			encontrado=true;
+		} else if (select.contains("CONTAINS (")) {
+			select = getContains(select, "CONTAINS (");
+			encontrado=true;
+		}
+		if(encontrado) {
+			select=adaptarAProdoc(select);
+		}
 		return select;
-		
+
+	}
+
+	private static String getContains(String statement, String contains) {
+		String salida = "";
+		String first = statement.substring(0, statement.indexOf(contains));
+		String end = statement.substring(statement.indexOf(contains)+contains.length()-1, statement.length());
+		String medio= end.substring(0,end.indexOf("\")")+2);
+		salida+= first +" "+ "function_contains=";
+		salida+= medio.substring(1,medio.length()-1)+" ";
+		salida+= end.substring(medio.length(),end.length());
+		return salida;
 	}
 
 }
