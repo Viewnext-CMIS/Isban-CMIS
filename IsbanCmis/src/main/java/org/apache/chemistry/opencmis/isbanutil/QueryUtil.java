@@ -46,33 +46,65 @@ public class QueryUtil {
 	}
 
 	public static String adaptarAProdoc(String select) {
+		select = traducirCmis(select);
+		select = adaptarContains(select);
+		return select;
+	}
+
+	private static String traducirCmis(String select) {
 		select = select.replace(",", " , ");
 		for (String key : listaTradMetadatas.keySet()) {
 			select = select.replace(key, traduccionCmis(key));
 		}
 		select = select.replace("cmis:", "");
-		boolean encontrado=false;
+
+		return select;
+	}
+
+	private static String adaptarInTree(String select) {
+		return select;
+	}
+
+	private static String adaptarInFolder(String select) {
+		boolean encontrado = false;
+		if (select.contains("in_folder(")) {
+
+		} else if (select.contains("in_folder (")) {
+
+		} else 	if(select.contains("IN_FOLDER(")) {
+			
+		}else {
+			//TODO: Continuar luego
+		}
+
+			return select;
+
+	}
+
+	private static String adaptarContains(String select) {
+
+		boolean encontrado = false;
 		if (select.contains("contains(")) {
 			select = getContains(select, "contains(");
-			encontrado=true;
+			encontrado = true;
 		} else if (select.contains("contains (")) {
 			select = getContains(select, "contains (");
-			encontrado=true;
+			encontrado = true;
 		} else if (select.contains("Contains (")) {
 			select = getContains(select, "Contains (");
-			encontrado=true;
+			encontrado = true;
 		} else if (select.contains("Contains(")) {
 			select = getContains(select, "Contains(");
-			encontrado=true;
+			encontrado = true;
 		} else if (select.contains("CONTAINS(")) {
 			select = getContains(select, "CONTAINS(");
-			encontrado=true;
+			encontrado = true;
 		} else if (select.contains("CONTAINS (")) {
 			select = getContains(select, "CONTAINS (");
-			encontrado=true;
+			encontrado = true;
 		}
-		if(encontrado) {
-			select=adaptarAProdoc(select);
+		if (encontrado) {
+			select = adaptarAProdoc(select);
 		}
 		return select;
 
@@ -81,11 +113,11 @@ public class QueryUtil {
 	private static String getContains(String statement, String contains) {
 		String salida = "";
 		String first = statement.substring(0, statement.indexOf(contains));
-		String end = statement.substring(statement.indexOf(contains)+contains.length()-1, statement.length());
-		String medio= end.substring(0,end.indexOf("\")")+2);
-		salida+= first +" "+ "function_contains=";
-		salida+= medio.substring(1,medio.length()-1)+" ";
-		salida+= end.substring(medio.length(),end.length());
+		String end = statement.substring(statement.indexOf(contains) + contains.length() - 1, statement.length());
+		String medio = end.substring(0, end.indexOf("\")") + 2);
+		salida += first + " " + "function_contains=";
+		salida += medio.substring(1, medio.length() - 1) + " ";
+		salida += end.substring(medio.length(), end.length());
 		return salida;
 	}
 
