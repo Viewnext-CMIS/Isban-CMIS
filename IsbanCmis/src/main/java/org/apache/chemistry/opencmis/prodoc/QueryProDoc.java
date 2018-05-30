@@ -24,6 +24,7 @@ import prodoc.Condition;
 import prodoc.Conditions;
 import prodoc.Cursor;
 import prodoc.DriverGeneric;
+import prodoc.ObjPD;
 import prodoc.PDDocs;
 import prodoc.PDException;
 import prodoc.PDFolders;
@@ -71,31 +72,14 @@ public class QueryProDoc {
 
         List camposSelect = selectStatement.getSelectItems();
         FromItem table = selectStatement.getFromItem();
-        BinaryExpression where = (BinaryExpression) selectStatement.getWhere();
         List order = selectStatement.getOrderByElements();
 
         String pTable;
-        // if (table.toString().equals("document")) {
         pTable = docType;
-        // } else {
-        // pTable = table.toString();
-        // }
 
-        Record pFields = objFolder.getRecordStructPDFolder();
-
-        Conditions pWhere = new Conditions();
-        if (where != null) {
-
-            String campo = where.getLeftExpression().toString();
-            String oper = where.getStringExpression().toString();
-            int valOper = valOperComp.get(oper);
-            String valor = where.getRightExpression().toString();
-
-            Condition cond = getCond(campo, valOper, valor, sesion, true, docType);
-            pWhere.addCondition(cond);
-        }
-
-        String pOrder = null;
+        Conditions condProdoc = getConditions(selectStatement.getWhere(), null, sesion, true, docType);
+        
+        Vector pOrder = null;
         if (order != null) {
 
             Iterator it = order.iterator();
@@ -104,44 +88,14 @@ public class QueryProDoc {
                 Object objIt = it.next();
                 String nombre = objIt.toString();
 
-                pOrder = nombre;
+                pOrder.add(nombre);
             }
         }
 
-        Query queryOPD = new Query(pTable, pFields, pWhere, pOrder);
-
-        Cursor cur = objFolder.getDrv().OpenCursor(queryOPD);
-
+        Cursor cur = objFolder.Search(docType, condProdoc, false, false, "RootFolder", pOrder);
         Record record = objFolder.getDrv().NextRec(cur);
 
-        while (record != null) {
-            record.initList();
-            String recordString = "";
-            Attribute attr = record.nextAttr();
-
-            while (attr != null) {
-
-                System.out.println("- Atributo " + attr.getName());
-
-                Iterator it = camposSelect.iterator();
-
-                while (it.hasNext()) {
-
-                    Object objIt = it.next();
-                    String nombre = objIt.toString();
-                    String nameAttr = attr.getName();
-                    if (nameAttr.equals(nombre)) {
-
-                        recordString = recordString.concat((String) attr.getValue()).concat("&&");
-                    }
-                }
-
-                attr = record.nextAttr();
-            }
-
-            result.add(recordString);
-            record = objFolder.getDrv().NextRec(cur);
-        }
+        result = obtenerSelectResult(cur, record, objFolder, true, camposSelect);
 
         objFolder.getDrv().CloseCursor(cur);
 
@@ -172,11 +126,9 @@ public class QueryProDoc {
         String pTable;
         pTable = docType;
 
-        Record pFields = doc.getRecordStruct();
-
         Conditions condProdoc = getConditions(selectStatement.getWhere(), null, sesion, false, docType);
 
-        String pOrder = null;
+        Vector pOrder = null;
         if (order != null) {
 
             Iterator it = order.iterator();
@@ -185,51 +137,88 @@ public class QueryProDoc {
                 Object objIt = it.next();
                 String nombre = objIt.toString();
 
-                pOrder = nombre;
+                pOrder.add(nombre);
             }
         }
 
-        Query queryOPD = new Query(pTable, pFields, condProdoc, pOrder);
+        Cursor cur = doc.Search(docType, condProdoc, false, false, false, "RootFolder", pOrder);
 
-        Cursor Cur = doc.getDrv().OpenCursor(queryOPD);
+        Record record = doc.getDrv().NextRec(cur);
 
-        Record record = doc.getDrv().NextRec(Cur);
+        result = obtenerSelectResult(cur, record, doc, false, camposSelect);
+
+        doc.getDrv().CloseCursor(cur);
+
+        return result;
+    }
+
+    
+    /** Obtiene el resultado de la busqueda
+     * 
+     * @param cur2
+     * @param record
+     * @param obj
+     * @param isFolder
+     * @param camposSelect
+     * @return
+     * @throws PDException
+     */
+    public static List<String> obtenerSelectResult(Cursor cur, Record record, ObjPD obj, boolean isFolder,
+            List camposSelect) throws PDException {
+
+        List<String> result = new ArrayList<String>();
+
+        if (isFolder) {
+
+            obj = (PDFolders) obj;
+        } else {
+            obj = (PDDocs) obj;
+        }
 
         while (record != null) {
-            record.initList();
+
             String recordString = "";
-            Attribute attr = record.nextAttr();
 
-            while (attr != null) {
+            Iterator it = camposSelect.iterator();
 
-                Iterator it = camposSelect.iterator();
+            while (it.hasNext()) {
 
-                while (it.hasNext()) {
+                Object objIt = it.next();
+                String nombre = objIt.toString();
+                
+                if(nombre.equals("IsPrivateWorkingCopy")) {
+                    
+                }
 
-                    Object objIt = it.next();
-                    String nombre = objIt.toString();
+                record.initList();
+                Attribute attr = record.nextAttr();
+                boolean enc = false;
+
+                while (attr != null && !enc) {
+
                     String nameAttr = attr.getName();
                     if (nameAttr.equals(nombre)) {
 
                         recordString = recordString.concat((String) attr.getValue()).concat("&&");
+                        enc = true;
                     }
-                }
 
-                attr = record.nextAttr();
+                    attr = record.nextAttr();
+                }
             }
 
             System.out.println(">>>>>   " + recordString);
 
             result.add(recordString);
-            record = doc.getDrv().NextRec(Cur);
-        }
 
-        doc.getDrv().CloseCursor(Cur);
+            record = obj.getDrv().NextRec(cur);
+        }
 
         return result;
     }
 
-    /**
+    
+    /** Obtiene las consdiciones de búsqueda
      * 
      * @param where
      * @param padre
@@ -288,196 +277,196 @@ public class QueryProDoc {
         return null;
     }
 
-    /**
-     * 
-     * @param sesion
-     * @param query
-     * @param isFolder
-     * @param docType
-     * @return
-     */
-    private static Query makeQuery(DriverGeneric sesion, String query, boolean isFolder, String docType) {
+//    /**
+//     * 
+//     * @param sesion
+//     * @param query
+//     * @param isFolder
+//     * @param docType
+//     * @return
+//     */
+//    private static Query makeQuery(DriverGeneric sesion, String query, boolean isFolder, String docType) {
+//
+//        String strSelect = null;
+//        String strFrom = null;
+//        String strWhere = null;
+//        String strGroup = null;
+//        String strOrder = null;
+//
+//        // Comenzamos a trocear la query
+//        // Obtenemos el trozo de cadena hasta encontrar la palabra "FROM"
+//        boolean bFrom = query.contains("FROM");
+//        if (bFrom) {
+//            int posFrom = query.indexOf("FROM");
+//            strSelect = query.substring(0, posFrom - 1);
+//            System.out.println(">>>>> strSelect : -->" + strSelect + "<--");
+//
+//            // Obtenemos el trozo de cadena hasta encontrar la palabra "WHERE", si existe
+//            boolean bWhere = query.contains("WHERE");
+//            if (bWhere) {
+//                int posWhere = query.indexOf("WHERE");
+//                // strFrom = query.substring(posFrom+5, posWhere-1);
+//                strFrom = docType;
+//                System.out.println(">>>>> strFrom : -->" + strFrom + "<--");
+//
+//                boolean bGroup = query.contains("GROUP");
+//                if (bGroup) {
+//                    int posGroup = query.indexOf("GROUP");
+//                    strWhere = query.substring(posWhere + 6, posGroup - 1);
+//                    System.out.println(">>>>> strWhere : -->" + strWhere + "<--");
+//
+//                    boolean bOrder = query.contains("ORDER");
+//                    if (bOrder) {
+//                        int posOrder = query.indexOf("ORDER");
+//                        strGroup = query.substring(posGroup + 9, posOrder - 1);
+//                        System.out.println(">>>>> strGroup : -->" + strGroup + "<--");
+//
+//                        strOrder = query.substring(posOrder + 9, query.length());
+//                        System.out.println(">>>>> strOrder : -->" + strOrder + "<--");
+//                    } else {
+//                        strGroup = query.substring(posGroup + 9, query.length());
+//                        System.out.println(">>>>> strGroup : -->" + strGroup + "<--");
+//                    }
+//
+//                } else {
+//                    strWhere = query.substring(posWhere + 6, query.length());
+//                    System.out.println(">>>>> strSelect : -->" + strSelect + "<--");
+//                }
+//            } else {
+//                // strFrom = query.substring(posFrom+5, query.length());
+//                strFrom = docType;
+//                System.out.println(">>>>> strFrom : -->" + strFrom);
+//            }
+//        }
+//
+//        // Guardamos los datos obtenidos en los campos correspondientes
+//        Vector pTables = obtenerVectorString(strFrom);
+//        Record pFields = getRecordStruct(sesion, isFolder, docType);
+//        Conditions pWhere = null;
+//        if (strWhere != null) {
+//            Conditions conds = new Conditions();
+//            pWhere = getConds(sesion, strWhere, isFolder, docType, conds);
+//        }
+//        Vector pOrderList = null;
+//        if (strOrder != null) {
+//            pOrderList = obtenerVectorString(strOrder);
+//        }
+//
+//        // public Query(String pTable, Record pFields, Conditions pWhere)
+//        // Query queryOPD = new Query(pTable, pFields, pWhere);
+//
+//        // public Query(Vector pTables, Record pFields, Conditions pWhere, Vector
+//        // pOrderList)
+//        Query queryOPD = new Query(pTables, pFields, pWhere, pOrderList);
+//
+//        return queryOPD;
+//    }
 
-        String strSelect = null;
-        String strFrom = null;
-        String strWhere = null;
-        String strGroup = null;
-        String strOrder = null;
+//    /**
+//     * 
+//     * @param strFrom
+//     * @return
+//     */
+//    private static Vector obtenerVectorString(String strFrom) {
+//
+//        String[] vecStrTables = strFrom.split(",");
+//        Vector vectTables = new Vector();
+//
+//        for (int i = 0; i < vecStrTables.length; i++) {
+//            vectTables.add(vecStrTables[i]);
+//        }
+//
+//        return vectTables;
+//    }
 
-        // Comenzamos a trocear la query
-        // Obtenemos el trozo de cadena hasta encontrar la palabra "FROM"
-        boolean bFrom = query.contains("FROM");
-        if (bFrom) {
-            int posFrom = query.indexOf("FROM");
-            strSelect = query.substring(0, posFrom - 1);
-            System.out.println(">>>>> strSelect : -->" + strSelect + "<--");
+//    /**
+//     * Metodo para obtener la estructura record dependiendo del tipo de objeto y el
+//     * dovType
+//     * 
+//     * @param MainSession
+//     * @param isFolder
+//     * @param docType
+//     * @return
+//     */
+//    private static Record getRecordStruct(DriverGeneric MainSession, boolean isFolder, String docType) {
+//
+//        Record pFields = null;
+//        try {
+//            if (isFolder) {
+//                PDFolders folder = new PDFolders(MainSession);
+//                pFields = folder.getRecSum();
+//            } else {
+//                PDDocs doc = new PDDocs(MainSession);
+//                doc.setDocType(docType);
+//                pFields = doc.getRecSum();
+//            }
+//        } catch (PDException ex) {
+//            Logger.getLogger(QueryProDoc.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//
+//        return pFields;
+//    }
 
-            // Obtenemos el trozo de cadena hasta encontrar la palabra "WHERE", si existe
-            boolean bWhere = query.contains("WHERE");
-            if (bWhere) {
-                int posWhere = query.indexOf("WHERE");
-                // strFrom = query.substring(posFrom+5, posWhere-1);
-                strFrom = docType;
-                System.out.println(">>>>> strFrom : -->" + strFrom + "<--");
-
-                boolean bGroup = query.contains("GROUP");
-                if (bGroup) {
-                    int posGroup = query.indexOf("GROUP");
-                    strWhere = query.substring(posWhere + 6, posGroup - 1);
-                    System.out.println(">>>>> strWhere : -->" + strWhere + "<--");
-
-                    boolean bOrder = query.contains("ORDER");
-                    if (bOrder) {
-                        int posOrder = query.indexOf("ORDER");
-                        strGroup = query.substring(posGroup + 9, posOrder - 1);
-                        System.out.println(">>>>> strGroup : -->" + strGroup + "<--");
-
-                        strOrder = query.substring(posOrder + 9, query.length());
-                        System.out.println(">>>>> strOrder : -->" + strOrder + "<--");
-                    } else {
-                        strGroup = query.substring(posGroup + 9, query.length());
-                        System.out.println(">>>>> strGroup : -->" + strGroup + "<--");
-                    }
-
-                } else {
-                    strWhere = query.substring(posWhere + 6, query.length());
-                    System.out.println(">>>>> strSelect : -->" + strSelect + "<--");
-                }
-            } else {
-                // strFrom = query.substring(posFrom+5, query.length());
-                strFrom = docType;
-                System.out.println(">>>>> strFrom : -->" + strFrom);
-            }
-        }
-
-        // Guardamos los datos obtenidos en los campos correspondientes
-        Vector pTables = obtenerVectorString(strFrom);
-        Record pFields = getRecordStruct(sesion, isFolder, docType);
-        Conditions pWhere = null;
-        if (strWhere != null) {
-            Conditions conds = new Conditions();
-            pWhere = getConds(sesion, strWhere, isFolder, docType, conds);
-        }
-        Vector pOrderList = null;
-        if (strOrder != null) {
-            pOrderList = obtenerVectorString(strOrder);
-        }
-
-        // public Query(String pTable, Record pFields, Conditions pWhere)
-        // Query queryOPD = new Query(pTable, pFields, pWhere);
-
-        // public Query(Vector pTables, Record pFields, Conditions pWhere, Vector
-        // pOrderList)
-        Query queryOPD = new Query(pTables, pFields, pWhere, pOrderList);
-
-        return queryOPD;
-    }
-
-    /**
-     * 
-     * @param strFrom
-     * @return
-     */
-    private static Vector obtenerVectorString(String strFrom) {
-
-        String[] vecStrTables = strFrom.split(",");
-        Vector vectTables = new Vector();
-
-        for (int i = 0; i < vecStrTables.length; i++) {
-            vectTables.add(vecStrTables[i]);
-        }
-
-        return vectTables;
-    }
-
-    /**
-     * Metodo para obtener la estructura record dependiendo del tipo de objeto y el
-     * dovType
-     * 
-     * @param MainSession
-     * @param isFolder
-     * @param docType
-     * @return
-     */
-    private static Record getRecordStruct(DriverGeneric MainSession, boolean isFolder, String docType) {
-
-        Record pFields = null;
-        try {
-            if (isFolder) {
-                PDFolders folder = new PDFolders(MainSession);
-                pFields = folder.getRecSum();
-            } else {
-                PDDocs doc = new PDDocs(MainSession);
-                doc.setDocType(docType);
-                pFields = doc.getRecSum();
-            }
-        } catch (PDException ex) {
-            Logger.getLogger(QueryProDoc.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        return pFields;
-    }
-
-    /**
-     * Metodo que obtiene las condiciones de la query
-     * 
-     * @param sesion
-     * @param strConditions
-     * @param isFolder
-     * @param docType
-     * @return
-     */
-    private static Conditions getConds(DriverGeneric sesion, String strConditions, boolean isFolder, String docType,
-            Conditions conds) {
-
-        Condition cond = null;
-        // Conditions conds = new Conditions();
-        // String strAux = strConditions;
-
-        boolean bAnd = strConditions.contains("AND");
-
-        String strAnd;
-        if (bAnd) {
-
-            int posAnd = strConditions.indexOf("AND");
-            strAnd = strConditions.substring(0, posAnd).trim();
-            System.out.println(">>>>> strAnd : -->" + strAnd + "<--");
-
-            // Separamos los campos de la condicion
-            String[] vCond = strAnd.split(" ");
-
-            String strCampo = vCond[0].trim();
-            String strOper = vCond[1].trim();
-            int valOper = valOperComp.get(strOper);
-            String strValor = vCond[2].trim();
-
-            cond = getCond(strCampo, valOper, strValor, sesion, isFolder, docType);
-            conds.addCondition(cond);
-
-            // Llamada recursiva
-            String strAux = strConditions.substring(posAnd + 4, strConditions.length()).trim();
-            conds = getConds(sesion, strAux, isFolder, docType, conds);
-
-        } else { //
-
-            // Separamos los campos de la condicion
-            String[] vCond = strConditions.split(" ");
-
-            // String strCampo = vCond[0].trim();
-            String strCampo = QueryUtil.listaTradMetadatas.get(vCond[0].trim()) != null
-                    ? QueryUtil.listaTradMetadatas.get(vCond[0].trim())
-                    : vCond[0].trim();
-
-            String strOper = vCond[1].trim();
-            int valOper = valOperComp.get(strOper);
-
-            cond = getCond(strCampo, valOper, vCond[2].trim(), sesion, isFolder, docType);
-            conds.addCondition(cond);
-
-        }
-
-        return conds;
-    }
+//    /**
+//     * Metodo que obtiene las condiciones de la query
+//     * 
+//     * @param sesion
+//     * @param strConditions
+//     * @param isFolder
+//     * @param docType
+//     * @return
+//     */
+//    private static Conditions getConds(DriverGeneric sesion, String strConditions, boolean isFolder, String docType,
+//            Conditions conds) {
+//
+//        Condition cond = null;
+//        // Conditions conds = new Conditions();
+//        // String strAux = strConditions;
+//
+//        boolean bAnd = strConditions.contains("AND");
+//
+//        String strAnd;
+//        if (bAnd) {
+//
+//            int posAnd = strConditions.indexOf("AND");
+//            strAnd = strConditions.substring(0, posAnd).trim();
+//            System.out.println(">>>>> strAnd : -->" + strAnd + "<--");
+//
+//            // Separamos los campos de la condicion
+//            String[] vCond = strAnd.split(" ");
+//
+//            String strCampo = vCond[0].trim();
+//            String strOper = vCond[1].trim();
+//            int valOper = valOperComp.get(strOper);
+//            String strValor = vCond[2].trim();
+//
+//            cond = getCond(strCampo, valOper, strValor, sesion, isFolder, docType);
+//            conds.addCondition(cond);
+//
+//            // Llamada recursiva
+//            String strAux = strConditions.substring(posAnd + 4, strConditions.length()).trim();
+//            conds = getConds(sesion, strAux, isFolder, docType, conds);
+//
+//        } else { //
+//
+//            // Separamos los campos de la condicion
+//            String[] vCond = strConditions.split(" ");
+//
+//            // String strCampo = vCond[0].trim();
+//            String strCampo = QueryUtil.listaTradMetadatas.get(vCond[0].trim()) != null
+//                    ? QueryUtil.listaTradMetadatas.get(vCond[0].trim())
+//                    : vCond[0].trim();
+//
+//            String strOper = vCond[1].trim();
+//            int valOper = valOperComp.get(strOper);
+//
+//            cond = getCond(strCampo, valOper, vCond[2].trim(), sesion, isFolder, docType);
+//            conds.addCondition(cond);
+//
+//        }
+//
+//        return conds;
+//    }
 
     /**
      * Metodo que devuelve una condicion
@@ -564,21 +553,41 @@ public class QueryProDoc {
             }
             break;
         case 5:
-            SimpleDateFormat formato2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String strValor = strValorCampo.substring(1, strValorCampo.length() - 1); // Eliminamos las comillas
+
             try {
-                Date dValor = formato2.parse(strValor);
-                cond = new Condition(strCampo, valOper, strValorCampo);
+                String strAux = strValorCampo.substring(1, strValorCampo.length() - 1);
+                String strPatron = "yyyy-MM-dd HH:mm:ss";
+                Date date = convertStringToTimestamp(strAux, strPatron);
+                cond = new Condition(strCampo, valOper, date);
             } catch (PDException e) {
-                e.printStackTrace();
-            } catch (ParseException e) {
                 e.printStackTrace();
             }
             break;
+
         default:
             break;
         }
 
         return cond;
     }
+
+    /**
+     * 
+     * @param str_date
+     * @param pattern
+     * @return
+     */
+    public static Date convertStringToTimestamp(String str_date, String pattern) {
+        try {
+
+            SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+            Date date = formatter.parse(str_date);
+            return date;
+
+        } catch (ParseException e) {
+            System.out.println("Exception :" + e);
+            return null;
+        }
+    }
+
 }
