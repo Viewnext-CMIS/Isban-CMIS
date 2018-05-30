@@ -48,6 +48,8 @@ public class QueryUtil {
 	public static String adaptarAProdoc(String select) {
 		select = traducirCmis(select);
 		select = adaptarContains(select);
+		select = adaptarInFolder(select);
+		select = adaptarInTree(select);
 		return select;
 	}
 
@@ -62,52 +64,153 @@ public class QueryUtil {
 	}
 
 	private static String adaptarInTree(String select) {
+		boolean encontrado = false;
+		if (select.toLowerCase().contains("in_tree(") || select.toLowerCase().contains("in_tree (")) {
+			if (select.toLowerCase().indexOf("in_tree(") == -1) {
+				int punto = select.toLowerCase().indexOf("in_tree (");
+				String inTree = select.substring(punto, punto + 9);
+				select = getInTree(select, inTree);
+				if (select.toLowerCase().contains("in_tree(") || select.toLowerCase().contains("in_tree ("))
+					encontrado = true;
+			} else if (select.toLowerCase().indexOf("in_tree (") == -1) {
+				int punto = select.toLowerCase().indexOf("in_tree(");
+				String inTree = select.substring(punto, punto + 8);
+				select = getInTree(select, inTree);
+				if (select.toLowerCase().contains("in_tree(") || select.toLowerCase().contains("in_tree ("))
+					encontrado = true;
+			} else if ((select.toLowerCase().indexOf("in_tree(") < select.toLowerCase().indexOf("in_tree ("))
+					|| select.toLowerCase().indexOf("in_tree (") < 0) {
+				int punto = select.toLowerCase().indexOf("in_tree(");
+				String inTree = select.substring(punto, punto + 8);
+				select = getInTree(select, inTree);
+				if (select.toLowerCase().contains("in_tree(") || select.toLowerCase().contains("in_tree ("))
+					encontrado = true;
+			} else if ((select.toLowerCase().indexOf("in_tree(") > select.toLowerCase().indexOf("in_tree ("))
+					|| select.toLowerCase().indexOf("in_tree(") < 0) {
+				int punto = select.toLowerCase().indexOf("in_tree (");
+				String inTree = select.substring(punto, punto + 9);
+				select = getInTree(select, inTree);
+				if (select.toLowerCase().contains("in_tree(") || select.toLowerCase().contains("in_tree ("))
+					encontrado = true;
+			}
+			if (encontrado) {
+				select = adaptarInTree(select);
+			}
+		}
+		return select;
+	}
+
+	private static String getInTree(String select, String inTree) {
+
+		String first = select.substring(0, select.indexOf(inTree));
+		String end = select.substring(first.length() + ("in_Tree".length()), select.length());
+		String valor = end.substring(0, end.indexOf("\")") + 2);
+		end = end.substring(valor.length(), end.length());
+		valor = valor.replace("(", "");
+		valor = valor.replace(")", "");
+		valor = valor.replace("\"", "");
+		if (valor.contains(",")) {
+			valor = (valor.split(","))[1].trim();
+		}
+
+		select = first + "function_InTree=" + "\"" + valor + "\"" + end;
+
+		select.toString();
+
 		return select;
 	}
 
 	private static String adaptarInFolder(String select) {
-		boolean encontrado = false;
-		if (select.contains("in_folder(")) {
-
-		} else if (select.contains("in_folder (")) {
-
-		} else 	if(select.contains("IN_FOLDER(")) {
-			
-		}else {
-			//TODO: Continuar luego
-		}
-
-			return select;
-
-	}
-
-	private static String adaptarContains(String select) {
 
 		boolean encontrado = false;
-		if (select.contains("contains(")) {
-			select = getContains(select, "contains(");
-			encontrado = true;
-		} else if (select.contains("contains (")) {
-			select = getContains(select, "contains (");
-			encontrado = true;
-		} else if (select.contains("Contains (")) {
-			select = getContains(select, "Contains (");
-			encontrado = true;
-		} else if (select.contains("Contains(")) {
-			select = getContains(select, "Contains(");
-			encontrado = true;
-		} else if (select.contains("CONTAINS(")) {
-			select = getContains(select, "CONTAINS(");
-			encontrado = true;
-		} else if (select.contains("CONTAINS (")) {
-			select = getContains(select, "CONTAINS (");
-			encontrado = true;
-		}
-		if (encontrado) {
-			select = adaptarAProdoc(select);
+		if (select.toLowerCase().contains("in_folder(") || select.toLowerCase().contains("in_folder (")) {
+			if (select.toLowerCase().indexOf("in_folder(") == -1) {
+				int punto = select.toLowerCase().indexOf("in_folder (");
+				String inFolder = select.substring(punto, punto + 11);
+				select = getInFolder(select, inFolder);
+				if (select.toLowerCase().contains("in_folder(") || select.toLowerCase().contains("in_folder ("))
+					encontrado = true;
+			} else if (select.toLowerCase().indexOf("in_folder (") == -1) {
+				int punto = select.toLowerCase().indexOf("in_folder(");
+				String inFolder = select.substring(punto, punto + 10);
+				select = getInFolder(select, inFolder);
+				if (select.toLowerCase().contains("in_folder(") || select.toLowerCase().contains("in_folder ("))
+					encontrado = true;
+			} else if ((select.toLowerCase().indexOf("in_folder(") < select.toLowerCase().indexOf("in_folder ("))
+					|| select.toLowerCase().indexOf("in_folder (") < 0) {
+				int punto = select.toLowerCase().indexOf("in_folder(");
+				String inFolder = select.substring(punto, punto + 10);
+				select = getInFolder(select, inFolder);
+				if (select.toLowerCase().contains("in_folder(") || select.toLowerCase().contains("in_folder ("))
+					encontrado = true;
+			} else if ((select.toLowerCase().indexOf("in_folder(") > select.toLowerCase().indexOf("in_folder ("))
+					|| select.toLowerCase().indexOf("in_folder(") < 0) {
+				int punto = select.toLowerCase().indexOf("in_folder (");
+				String inFolder = select.substring(punto, punto + 11);
+				select = getInFolder(select, inFolder);
+				if (select.toLowerCase().contains("in_folder(") || select.toLowerCase().contains("in_folder ("))
+					encontrado = true;
+			}
+			if (encontrado) {
+				select = adaptarInFolder(select);
+			}
 		}
 		return select;
 
+	}
+
+	private static String getInFolder(String select, String inFolder) {
+		String first = select.substring(0, select.indexOf(inFolder));
+		String end = select.substring(first.length() + ("in_folder".length()), select.length());
+		String valor = end.substring(0, end.indexOf("\")") + 2);
+		end = end.substring(valor.length(), end.length());
+		valor = valor.replace("(", "");
+		valor = valor.replace(")", "");
+		valor = valor.replace("\"", "");
+		if (valor.contains(",")) {
+			valor = (valor.split(","))[1].trim();
+		}
+
+		select = first + "function_InFolder=" + "\"" + valor + "\"" + end;
+
+		select.toString();
+
+		return select;
+	}
+
+	private static String adaptarContains(String select) {
+		boolean encontrado = false;
+		if (select.toLowerCase().contains("contains(") || select.toLowerCase().contains("contains (")) {
+			if (select.toLowerCase().indexOf("contains(") == -1) {
+				int punto = select.toLowerCase().indexOf("contains (");
+				String contains = select.substring(punto, punto + 10);
+				select = getContains(select, contains);
+				if (select.toLowerCase().contains("contains(") || select.toLowerCase().contains("contains ("))
+					encontrado = true;
+			} else if (select.toLowerCase().indexOf("contains (") == -1) {
+				int punto = select.toLowerCase().indexOf("contains(");
+				String contains = select.substring(punto, punto + 9);
+				select = getContains(select, contains);
+				if (select.toLowerCase().contains("contains(") || select.toLowerCase().contains("contains ("))
+					encontrado = true;
+			} else if ((select.toLowerCase().indexOf("contains(") < select.toLowerCase().indexOf("contains ("))) {
+				int punto = select.toLowerCase().indexOf("contains(");
+				String contains = select.substring(punto, punto + 9);
+				select = getContains(select, contains);
+				if (select.toLowerCase().contains("contains(") || select.toLowerCase().contains("contains ("))
+					encontrado = true;
+			} else if ((select.toLowerCase().indexOf("contains(") > select.toLowerCase().indexOf("contains ("))) {
+				int punto = select.toLowerCase().indexOf("contains (");
+				String contains = select.substring(punto, punto + 10);
+				select = getContains(select, contains);
+				if (select.toLowerCase().contains("contains(") || select.toLowerCase().contains("contains ("))
+					encontrado = true;
+			}
+			if (encontrado) {
+				select = adaptarContains(select);
+			}
+		}
+		return select;
 	}
 
 	private static String getContains(String statement, String contains) {
@@ -115,7 +218,7 @@ public class QueryUtil {
 		String first = statement.substring(0, statement.indexOf(contains));
 		String end = statement.substring(statement.indexOf(contains) + contains.length() - 1, statement.length());
 		String medio = end.substring(0, end.indexOf("\")") + 2);
-		salida += first + " " + "function_contains=";
+		salida += first + "function_Contains=";
 		salida += medio.substring(1, medio.length() - 1) + " ";
 		salida += end.substring(medio.length(), end.length());
 		return salida;
