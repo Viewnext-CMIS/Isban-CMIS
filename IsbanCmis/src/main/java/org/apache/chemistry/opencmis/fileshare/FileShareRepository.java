@@ -446,19 +446,19 @@ public class FileShareRepository {
 			
 			String contains=QueryUtil.adaptarContains(statement);
 			String inTree=QueryUtil.adaptarInTree(statement);
-			String query = QueryUtil.adaptarAProdoc(statement);
+			String query = QueryUtil.adaptarAProdoc(statement).trim();
 			
 			Statement x = managerSql.parse(new StringReader(query));
 			if (x instanceof Select) {
 				PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
 				FromItem from = selectStatement.getFromItem();
-				listaSalida.addAll(goToQuery(from.toString(), contains,inTree,"", sesProdoc.getMainSession(), selectStatement));
+				listaSalida.addAll(goToQuery(from.toString(), contains,inTree, sesProdoc.getMainSession(), selectStatement));
 				if (!selectStatement.getJoins().isEmpty()) {
 					Iterator it = selectStatement.getJoins().iterator();
 					while (it.hasNext()) {
 						Join j = (Join) it.next();
 						listaSalida.addAll(
-								goToQuery(j.toString(), contains,inTree,"", sesProdoc.getMainSession(), selectStatement));
+								goToQuery(j.toString(), contains,inTree, sesProdoc.getMainSession(), selectStatement));
 					}
 				}
 
@@ -482,24 +482,24 @@ public class FileShareRepository {
 	 * @return
 	 * @throws PDException
 	 */
-	private Vector<String> goToQuery(String tipo, String fulltext,String inTree,String inFolder, DriverGeneric sesion, PlainSelect selectStatement)
+	private Vector<String> goToQuery(String tipo, String fulltext,String inTree,DriverGeneric sesion, PlainSelect selectStatement)
 			throws PDException {
 		Vector<String> listaSalida = new Vector<>();
 		if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
 
-			listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext,inTree,inFolder, sesion, "PD_DOCS", selectStatement));
+			listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext,inTree, sesion, "PD_DOCS", selectStatement));
 
 		} else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
-			listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext,inTree,inFolder, sesion, "PD_FOLDERS", null));// TODO: Cambiar el
+			listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext,inTree, sesion, "PD_FOLDERS", selectStatement));// TODO: Cambiar el
 																									// metodo
 		} else {
 			PDObjDefs od = new PDObjDefs(sesion);
 			od.Load(tipo);
 			String tipoObj = od.getClassType();
 			if (tipoObj.equalsIgnoreCase("document")) {
-				listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext,inTree,inFolder, sesion, tipo, selectStatement));
+				listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext,inTree, sesion, tipo, selectStatement));
 			} else {
-				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext,inTree,inFolder, sesion, "PD_FOLDERS", null));
+				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext,inTree, sesion, "PD_FOLDERS", selectStatement));
 			}
 		}
 		return listaSalida;
