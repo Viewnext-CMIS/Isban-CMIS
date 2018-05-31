@@ -421,26 +421,44 @@ public class FileShareRepository {
 
 		return typeManager.getTypeDefinition(context, typeId);
 	}
-
+	/**
+	 * 
+	 * @param context
+	 * @param repositoryId
+	 * @param statement
+	 * @param searchAllVersions
+	 * @param includeAllowableActions
+	 * @param includeRelationships
+	 * @param renditionFilter
+	 * @param maxItems
+	 * @param skipCount
+	 * @param extension
+	 * @param sesProdoc
+	 * @return
+	 */
 	public ObjectList query(CallContext context, String repositoryId, String statement, Boolean searchAllVersions,
 			Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
 			BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc) {
 		CCJSqlParserManager managerSql = new CCJSqlParserManager();
 		try {
 			Vector<String> listaSalida = new Vector<>();
-
+			
+			
+			String contains=QueryUtil.adaptarContains(statement);
+			String inTree=QueryUtil.adaptarInTree(statement);
 			String query = QueryUtil.adaptarAProdoc(statement);
+			
 			Statement x = managerSql.parse(new StringReader(query));
 			if (x instanceof Select) {
 				PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
 				FromItem from = selectStatement.getFromItem();
-				listaSalida.addAll(goToQuery(from.toString(), "","","", sesProdoc.getMainSession(), selectStatement));
+				listaSalida.addAll(goToQuery(from.toString(), contains,inTree,"", sesProdoc.getMainSession(), selectStatement));
 				if (!selectStatement.getJoins().isEmpty()) {
 					Iterator it = selectStatement.getJoins().iterator();
 					while (it.hasNext()) {
 						Join j = (Join) it.next();
 						listaSalida.addAll(
-								goToQuery(j.toString(), "","","", sesProdoc.getMainSession(), selectStatement));
+								goToQuery(j.toString(), contains,inTree,"", sesProdoc.getMainSession(), selectStatement));
 					}
 				}
 
@@ -450,7 +468,7 @@ public class FileShareRepository {
 		} catch (JSQLParserException | PDException e) {
 			e.printStackTrace();
 		}
-
+ 
 		return null;
 
 	}
