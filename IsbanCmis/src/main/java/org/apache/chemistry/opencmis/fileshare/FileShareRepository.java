@@ -434,13 +434,13 @@ public class FileShareRepository {
 			if (x instanceof Select) {
 				PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
 				FromItem from = selectStatement.getFromItem();
-				listaSalida.addAll(goToQuery(from.toString(), statement, sesProdoc.getMainSession(), selectStatement));
+				listaSalida.addAll(goToQuery(from.toString(), "","","", sesProdoc.getMainSession(), selectStatement));
 				if (!selectStatement.getJoins().isEmpty()) {
 					Iterator it = selectStatement.getJoins().iterator();
 					while (it.hasNext()) {
 						Join j = (Join) it.next();
 						listaSalida.addAll(
-								goToQuery(j.toString(), statement, sesProdoc.getMainSession(), selectStatement));
+								goToQuery(j.toString(), "","","", sesProdoc.getMainSession(), selectStatement));
 					}
 				}
 
@@ -464,24 +464,24 @@ public class FileShareRepository {
 	 * @return
 	 * @throws PDException
 	 */
-	private Vector<String> goToQuery(String tipo, String statement, DriverGeneric sesion, PlainSelect selectStatement)
+	private Vector<String> goToQuery(String tipo, String fulltext,String inTree,String inFolder, DriverGeneric sesion, PlainSelect selectStatement)
 			throws PDException {
 		Vector<String> listaSalida = new Vector<>();
 		if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
 
-			listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesion, "PD_DOCS", selectStatement));
+			listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext,inTree,inFolder, sesion, "PD_DOCS", selectStatement));
 
 		} else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
-			listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesion, "PD_FOLDERS", null));// TODO: Cambiar el
+			listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext,inTree,inFolder, sesion, "PD_FOLDERS", null));// TODO: Cambiar el
 																									// metodo
 		} else {
 			PDObjDefs od = new PDObjDefs(sesion);
 			od.Load(tipo);
 			String tipoObj = od.getClassType();
 			if (tipoObj.equalsIgnoreCase("document")) {
-				listaSalida.addAll(QueryProDoc.busquedaDoc(statement, sesion, tipo, selectStatement));
+				listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext,inTree,inFolder, sesion, tipo, selectStatement));
 			} else {
-				listaSalida.addAll(QueryProDoc.busquedaFolder(statement, sesion, "PD_FOLDERS", null));
+				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext,inTree,inFolder, sesion, "PD_FOLDERS", null));
 			}
 		}
 		return listaSalida;
