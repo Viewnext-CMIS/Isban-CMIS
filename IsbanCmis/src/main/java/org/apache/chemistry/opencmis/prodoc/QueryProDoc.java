@@ -60,8 +60,8 @@ public class QueryProDoc {
      * @return
      * @throws PDException
      */
-    public static List<String> busquedaFolder(String fullText, String inTree, String inFolder, DriverGeneric sesion,
-            String docType, PlainSelect selectStatement) throws PDException {
+    public static List<String> busquedaFolder(String fullText, String inTree, DriverGeneric sesion, String docType,
+            PlainSelect selectStatement) throws PDException {
 
         List<String> result = new ArrayList<String>();
         PDFolders objFolder = new PDFolders(sesion);
@@ -88,6 +88,7 @@ public class QueryProDoc {
         }
 
         Cursor cur = objFolder.Search(docType, condProdoc, false, false, "RootFolder", pOrder);
+
         Record record = objFolder.getDrv().NextRec(cur);
 
         result = obtenerSelectResult(cur, record, objFolder, true, camposSelect, where);
@@ -106,8 +107,8 @@ public class QueryProDoc {
      * @return
      * @throws PDException
      */
-    public static List<String> busquedaDoc(String fullText, String inTree, String inFolder, DriverGeneric sesion,
-            String docType, PlainSelect selectStatement) throws PDException {
+    public static List<String> busquedaDoc(String fullText, String inTree, DriverGeneric sesion, String docType,
+            PlainSelect selectStatement) throws PDException {
 
         List<String> result = new ArrayList<String>();
 
@@ -134,9 +135,15 @@ public class QueryProDoc {
                 pOrder.add(nombre);
             }
         }
-
-        Cursor cur = doc.Search(docType, condProdoc, false, false, false, "RootFolder", pOrder);
-
+        
+        Cursor cur = new Cursor();
+        if(fullText==null || fullText.equals("")) {
+            doc.Search(docType, condProdoc, false, false, false, "RootFolder", pOrder);
+        }else {
+            doc.Search(fullText, docType, condProdoc, false, false, false, "RootFolder", pOrder);    
+        }
+        
+        
         Record record = doc.getDrv().NextRec(cur);
 
         result = obtenerSelectResult(cur, record, doc, false, camposSelect, where);
@@ -344,131 +351,6 @@ public class QueryProDoc {
                     break;
                 }
 
-                // // Tipo cmis:baseTypeId
-                // if (nombre.equals("baseTypeId")) {
-                // PDObjDefs D=new PDObjDefs(obj.getDrv());
-                //
-                // Record rec = D.Load((String) record.getAttr("DocType").getValue());
-                // String str = (String) rec.getAttr("Parent").getValue();
-                //
-                // recordString = recordString.concat(str).concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat(str).concat(" || ");
-                // enc = true;
-                // }
-                //
-                // // Tipo cmis:isImmutable
-                // if (nombre.equals("isImmutable")) {
-                // recordString = recordString.concat("true").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
-                // enc = true;
-                // }
-                //
-                // // cmis:isLatestVersion y cmis:isLatestMajorVersion
-                // if ((nombre.equals("isLatestVersion")) ||
-                // (nombre.equals("isLatestMajorVersion"))) {
-                // String strWhere = where.toString();
-                // if(strWhere.contains("Version")) {
-                // recordString = recordString.concat("false").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("false").concat(" || ");
-                // }else {
-                // recordString = recordString.concat("true").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
-                // }
-                // enc = true;
-                // }
-                //
-                // // Tipo cmis:isMajorVersion
-                // if (nombre.equals("isMajorVersion")) {
-                // recordString = recordString.concat("true").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
-                // enc = true;
-                // }
-                //
-                // // Tipo cmis:IsPrivateWorkingCopy
-                // if (nombre.equals("IsPrivateWorkingCopy")) {
-                // Attribute attrLockedBy = record.getAttr("LockedBy");
-                // String usuSesion = obj.getDrv().getUser().getName();
-                // if (attrLockedBy.getValue() != null &&
-                // attrLockedBy.getValue().toString().equals(usuSesion)) {
-                // recordString = recordString.concat("true").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
-                // } else {
-                // recordString = recordString.concat("false").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("false").concat(" || ");
-                // }
-                // enc = true;
-                // }
-                //
-                // // Tipo cmis:isVersionSeriesCheckedOut
-                // if (nombre.equals("isVersionSeriesCheckedOut")) {
-                // Attribute attrAux = record.getAttr("LockedBy");
-                // if (attrAux.getValue() != null) {
-                // recordString = recordString.concat("true").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
-                // }
-                // enc = true;
-                // }
-                //
-                // // Tipo cmis:versionSeriesCheckedOutId
-                // if (nombre.equals("versionSeriesCheckedOutId")) {
-                // Attribute attrLockedBy = record.getAttr("LockedBy");
-                // String usuSesion = obj.getDrv().getUser().getName();
-                // if (attrLockedBy.getValue() != null &&
-                // attrLockedBy.getValue().toString().equals(usuSesion)) {
-                // recordString = recordString.concat(usuSesion).concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat(usuSesion).concat(" || ");
-                // } else {
-                // recordString = recordString.concat("").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("").concat(" || ");
-                // }
-                // enc = true;
-                // }
-                //
-                // // cmis:contentStreamId --> Siempre 0
-                // if (nombre.equals("contentStreamId")) {
-                // recordString = recordString.concat("0").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("0").concat(" || ");
-                // enc = true;
-                // }
-                //
-                // // Tipo cmis:path
-                // if (nombre.equals("path")) {
-                //
-                // if (isFolder) {
-                //
-                // Attribute attrPDId = record.getAttr("PDId");
-                // String str = ((PDFolders) obj).getPathId((String) attrPDId.getValue());
-                //
-                // recordString = recordString.concat(str).concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat(str).concat(" || ");
-                // } else {
-                // recordString = recordString.concat("").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("").concat(" || ");
-                // }
-                //
-                // enc = true;
-                // }
-                //
-                // // cmis:allowedChildObjectTypeIds --> "not set" siempre
-                // if (nombre.equals("allowedChildObjectTypeIds")) {
-                // recordString = recordString.concat("not set").concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat("not set").concat(" || ");
-                // enc = true;
-                // }
-                //
-                // while (attr != null && !enc) {
-                //
-                // String nameAttr = attr.getName();
-                // if (nameAttr.equals(nombre)) {
-                //
-                // recordString = recordString.concat((String) attr.getValue()).concat("&&");
-                // cadenaAMostrar = cadenaAMostrar.concat((String) attr.getValue()).concat(" ||
-                // ");
-                // enc = true;
-                // }
-                //
-                // attr = record.nextAttr();
-                // }
             }
 
             System.out.println(cadenaAMostrar);
