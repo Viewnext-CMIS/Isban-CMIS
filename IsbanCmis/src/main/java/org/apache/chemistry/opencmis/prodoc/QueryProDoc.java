@@ -64,7 +64,7 @@ public class QueryProDoc {
      * @return
      * @throws PDException
      */
-    public static List<String> busquedaFolder(String statement, DriverGeneric sesion, String docType,
+    public static List<String> busquedaFolder(String fullText, String inTree, String inFolder, DriverGeneric sesion, String docType,
             PlainSelect selectStatement) throws PDException {
 
         List<String> result = new ArrayList<String>();
@@ -111,7 +111,7 @@ public class QueryProDoc {
      * @return
      * @throws PDException
      */
-    public static List<String> busquedaDoc(String statement, DriverGeneric sesion, String docType,
+    public static List<String> busquedaDoc(String fullText, String inTree, String inFolder, DriverGeneric sesion, String docType,
             PlainSelect selectStatement) throws PDException {
 
         List<String> result = new ArrayList<String>();
@@ -175,24 +175,93 @@ public class QueryProDoc {
             obj = (PDDocs) obj;
         }
 
+        Iterator it = camposSelect.iterator();
+
+// ELIMINAR - SOLO ES PARA MOSTRAR EN EVIDENCIAS        
+        while (it.hasNext()) {
+
+            Object objIt = it.next();
+            String nombre = objIt.toString();
+        
+            System.out.print("   " + nombre + "   ||");
+            
+        }
+        System.out.println("");
+        
         while (record != null) {
 
             String recordString = "";
 
-            Iterator it = camposSelect.iterator();
+// ELIMINAR - SOLO ES PARA MOSTRAR EN EVIDENCIAS            
+            String cadenaAMostrar = "";           
+            
+            // Iterator it = camposSelect.iterator();
+            it = camposSelect.iterator();
 
             while (it.hasNext()) {
 
                 Object objIt = it.next();
                 String nombre = objIt.toString();
-                
-                if(nombre.equals("IsPrivateWorkingCopy")) {
-                    
-                }
-
+                                
                 record.initList();
                 Attribute attr = record.nextAttr();
                 boolean enc = false;
+
+                // Tipo cmis:isImmutable
+                if(nombre.equals("isImmutable") ) {                                      
+                    recordString = recordString.concat("true").concat("&&");   
+                    cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
+                    enc = true;
+                    System.out.println(">>>>>   isImmutable");
+                }
+                // Tipo cmis:isMajorVersion
+                if(nombre.equals("isMajorVersion") ) {                                      
+                    recordString = recordString.concat("true").concat("&&");     
+                    cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
+                    enc = true;
+                    System.out.println(">>>>>   isMajorVersion");
+                }
+                // Tipo cmis:IsPrivateWorkingCopy
+                if(nombre.equals("IsPrivateWorkingCopy")) {
+                    Attribute attrLockedBy = record.getAttr("LockedBy");
+                    String usuSesion = obj.getDrv().getUser().getName();
+                    if (attrLockedBy.getValue() != null && attrLockedBy.getValue().toString().equals(usuSesion)) {
+                        recordString = recordString.concat("true").concat("&&");     
+                        cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
+                    }else {
+                        recordString = recordString.concat("false").concat("&&");
+                        cadenaAMostrar = cadenaAMostrar.concat("false").concat(" || ");
+                    }
+                    enc = true;
+                    System.out.println(">>>>>   Looooooook");
+                }
+                // Tipo cmis:isVersionSeriesCheckedOut
+                if(nombre.equals("isVersionSeriesCheckedOut")) {
+                    Attribute attrAux = record.getAttr("LockedBy");
+                    if (attrAux.getValue()!=null) {
+                        recordString = recordString.concat("true").concat("&&");     
+                        cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
+                    }
+                    enc = true;
+                    System.out.println(">>>>>   isVersionSeriesCheckedOut");
+                }
+                // cmis:contentStreamId --> Siempre 0
+                if(nombre.equals("contentStreamId") ) {                                      
+                    recordString = recordString.concat("0").concat("&&");      
+                    cadenaAMostrar = cadenaAMostrar.concat("0").concat(" || ");
+                    enc = true;
+                    System.out.println(">>>>>   contentStreamId");
+                }
+                // cmis:allowedChildObjectTypeIds --> "not set" siempre
+                if(nombre.equals("allowedChildObjectTypeIds") ) {                                      
+                    recordString = recordString.concat("not set").concat("&&");   
+                    cadenaAMostrar = cadenaAMostrar.concat("not set").concat(" || ");
+                    enc = true;
+                    System.out.println(">>>>>   allowedChildObjectTypeIds");
+                }
+                
+                
+                
 
                 while (attr != null && !enc) {
 
@@ -200,6 +269,7 @@ public class QueryProDoc {
                     if (nameAttr.equals(nombre)) {
 
                         recordString = recordString.concat((String) attr.getValue()).concat("&&");
+                        cadenaAMostrar = cadenaAMostrar.concat((String) attr.getValue()).concat(" || ");
                         enc = true;
                     }
 
@@ -207,7 +277,7 @@ public class QueryProDoc {
                 }
             }
 
-            System.out.println(">>>>>   " + recordString);
+            System.out.println(cadenaAMostrar);
 
             result.add(recordString);
 
