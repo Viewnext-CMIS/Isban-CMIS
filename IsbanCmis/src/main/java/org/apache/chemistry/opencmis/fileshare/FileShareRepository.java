@@ -120,6 +120,7 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderContainerImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderListImpl;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectListImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectParentDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PartialContentStreamImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PermissionDefinitionDataImpl;
@@ -140,6 +141,7 @@ import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 import org.apache.chemistry.opencmis.commons.spi.Holder;
 import org.apache.chemistry.opencmis.isbanutil.QueryUtil;
+import org.apache.chemistry.opencmis.isbanutil.QueryValidator;
 import org.apache.chemistry.opencmis.prodoc.InsertProDoc;
 import org.apache.chemistry.opencmis.prodoc.QueryProDoc;
 import org.apache.chemistry.opencmis.prodoc.SesionProDoc;
@@ -443,6 +445,10 @@ public class FileShareRepository {
 		try {
 			Vector<String> listaSalida = new Vector<>();
 			
+			if(!QueryValidator.validarStatement(statement)) {
+				return null;
+			}
+			
 			String query = QueryUtil.adaptarAProdoc(statement).trim();
 			String contains=QueryUtil.getAddParam(query,0);
 			String inTree=QueryUtil.getAddParam(query,1);
@@ -468,7 +474,6 @@ public class FileShareRepository {
 		} catch (JSQLParserException | PDException e) {
 			e.printStackTrace();
 		}
- 
 		return null;
 
 	}
