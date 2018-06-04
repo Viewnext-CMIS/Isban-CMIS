@@ -443,10 +443,10 @@ public class FileShareRepository {
 		try {
 			Vector<String> listaSalida = new Vector<>();
 			
-			
-			String contains=QueryUtil.adaptarContains(statement);
-			String inTree=QueryUtil.adaptarInTree(statement);
 			String query = QueryUtil.adaptarAProdoc(statement).trim();
+			String contains=QueryUtil.getAddParam(query,0);
+			String inTree=QueryUtil.getAddParam(query,1);
+			
 			
 			Statement x = managerSql.parse(new StringReader(query));
 			if (x instanceof Select) {
