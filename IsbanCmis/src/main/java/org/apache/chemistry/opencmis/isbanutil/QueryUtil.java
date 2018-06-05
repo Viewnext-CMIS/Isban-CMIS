@@ -64,6 +64,9 @@ public class QueryUtil {
 	public static String getAddParam(String query, int tipo) {
 		String salida = "";
 		String tipoParam = getTipoParam(tipo);
+		if(query.toLowerCase().indexOf("order by")>0) {
+			query= query.substring(0, query.toLowerCase().indexOf("order by"));
+		}
 		if (query.indexOf(tipoParam) > 0) {
 			String[] aQuery = query.split(tipoParam);
 			String aux = aQuery[aQuery.length - 1];
