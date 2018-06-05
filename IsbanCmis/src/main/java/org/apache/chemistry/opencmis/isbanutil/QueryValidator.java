@@ -93,13 +93,12 @@ public class QueryValidator {
 	private static boolean valInTree(String where) {// Comprobamos el primer nivel de contains
 		boolean validado = true;
 		if (where.toLowerCase().indexOf("in_tree") > 0) {
-			int and = where.toLowerCase().indexOf(" or ");
-			int contains = -1;
-			contains = where.toLowerCase().indexOf("in_tree");
+			int or = where.toLowerCase().indexOf(" or ");
+			int contains = where.toLowerCase().indexOf("in_tree");
 
 			if (contains != where.toLowerCase().lastIndexOf("in_tree"))
 				validado = false;
-			if (contains > and)
+			if (validado && contains > or && or>0)
 				validado = false;
 		}
 		return validado;

@@ -471,8 +471,8 @@ public class FileShareRepository {
 			}
 			mostrar(listaSalida, null);
 
-		} catch (JSQLParserException | PDException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			throw new  CmisConstraintException("fallo:CMIS query");
 		}
 		return null;
 
