@@ -123,7 +123,7 @@ public class QueryProDoc {
         Conditions condProdoc = getConditions(where, null, sesion, false, docType);
 
         List order = selectStatement.getOrderByElements();
-        Vector pOrder = null;
+        Vector pOrder = new Vector();
         if (order != null) {
 
             Iterator it = order.iterator();
@@ -135,15 +135,28 @@ public class QueryProDoc {
                 pOrder.add(nombre);
             }
         }
-        
+
+        String IdActFold = "RootFolder";
+        // Boolean inTree = true;
         Cursor cur = new Cursor();
-        if(fullText==null || fullText.equals("")) {
-            doc.Search(docType, condProdoc, false, false, false, "RootFolder", pOrder);
-        }else {
-            doc.Search(fullText, docType, condProdoc, false, false, false, "RootFolder", pOrder);    
+
+        if (fullText == null || fullText.equals("")) {
+            cur = doc.Search(docType, condProdoc, false, false, false, IdActFold, pOrder);
+        } else { // Si tiene CONTAINS
+
+            if (condProdoc == null) {
+                Conditions condsDoc = new Conditions();
+
+                // Cursor Search(String FTQuery, String DocType, Conditions AttrConds, boolean
+                // SubTypes, boolean SubFolders, boolean IncludeVers, String IdActFold, Vector
+                // Ord)
+                cur = doc.Search(fullText, docType, condsDoc, false, true, false, IdActFold, pOrder);
+            } else {
+                cur = doc.Search(fullText, docType, condProdoc, false, true, false, IdActFold, pOrder);
+            }
+
         }
-        
-        
+
         Record record = doc.getDrv().NextRec(cur);
 
         result = obtenerSelectResult(cur, record, doc, false, camposSelect, where);
@@ -417,12 +430,19 @@ public class QueryProDoc {
             int valOper = valOperComp.get(oper);
             String valor = be.getRightExpression().toString();
 
-            Condition prodocCond = getCond(campo, valOper, valor, sesion, isFolder, docType);
-            if (padre == null) {
-                padre = new Conditions();
-            }
-            padre.addCondition(prodocCond);
+            if (!campo.equals("Function_Contains")) {
 
+                if (campo.equals("Function_InTree")) {
+                    campo = "ParentId";
+                }
+
+                Condition prodocCond = getCond(campo, valOper, valor, sesion, isFolder, docType);
+
+                if (padre == null) {
+                    padre = new Conditions();
+                }
+                padre.addCondition(prodocCond);
+            }
         }
 
         return padre;
