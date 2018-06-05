@@ -423,6 +423,7 @@ public class FileShareRepository {
 
 		return typeManager.getTypeDefinition(context, typeId);
 	}
+
 	/**
 	 * 
 	 * @param context
@@ -437,6 +438,8 @@ public class FileShareRepository {
 	 * @param extension
 	 * @param sesProdoc
 	 * @return
+	 * @throws JSQLParserException
+	 * @throws PDException
 	 */
 	public ObjectList query(CallContext context, String repositoryId, String statement, Boolean searchAllVersions,
 			Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
@@ -444,36 +447,41 @@ public class FileShareRepository {
 		CCJSqlParserManager managerSql = new CCJSqlParserManager();
 		try {
 			Vector<String> listaSalida = new Vector<>();
-			
-			if(!QueryValidator.validarStatement(statement)) {
-				return null;
+
+			if (!QueryValidator.validarStatement(statement)) {
+				throw new CmisInvalidArgumentException(
+						"CONTAINS or IN_TREE must be unique. And they should be on the first level");
 			}
-			
+
 			String query = QueryUtil.adaptarAProdoc(statement).trim();
-			String contains=QueryUtil.getAddParam(query,0);
-			String inTree=QueryUtil.getAddParam(query,1);
-			
-			
+			String contains = QueryUtil.getAddParam(query, 0);
+			String inTree = QueryUtil.getAddParam(query, 1);
+
 			Statement x = managerSql.parse(new StringReader(query));
 			if (x instanceof Select) {
 				PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
 				FromItem from = selectStatement.getFromItem();
-				listaSalida.addAll(goToQuery(from.toString(), contains,inTree, sesProdoc.getMainSession(), selectStatement));
+				listaSalida.addAll(
+						goToQuery(from.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
 				if (!selectStatement.getJoins().isEmpty()) {
 					Iterator it = selectStatement.getJoins().iterator();
 					while (it.hasNext()) {
 						Join j = (Join) it.next();
 						listaSalida.addAll(
-								goToQuery(j.toString(), contains,inTree, sesProdoc.getMainSession(), selectStatement));
+								goToQuery(j.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
 					}
 				}
 
 			}
 			mostrar(listaSalida, null);
-
-		} catch (Exception e) {
-			throw new  CmisConstraintException("fallo:CMIS query");
+		} catch (JSQLParserException e) {
+			throw new CmisInvalidArgumentException(e.getCause().getMessage());
+		} catch (PDException ex) {
+			throw new CmisInvalidArgumentException(ex.getCause().getMessage());
+		}catch(Exception exc) {
+			throw new CmisInvalidArgumentException(exc.getMessage());
 		}
+
 		return null;
 
 	}
@@ -487,24 +495,23 @@ public class FileShareRepository {
 	 * @return
 	 * @throws PDException
 	 */
-	private Vector<String> goToQuery(String tipo, String fulltext,String inTree,DriverGeneric sesion, PlainSelect selectStatement)
-			throws PDException {
+	private Vector<String> goToQuery(String tipo, String fulltext, String inTree, DriverGeneric sesion,
+			PlainSelect selectStatement) throws PDException {
 		Vector<String> listaSalida = new Vector<>();
 		if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
 
-			listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext,inTree, sesion, "PD_DOCS", selectStatement));
+			listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext, inTree, sesion, "PD_DOCS", selectStatement));
 
 		} else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
-			listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext,inTree, sesion, "PD_FOLDERS", selectStatement));// TODO: Cambiar el
-																									// metodo
+			listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext, inTree, sesion, "PD_FOLDERS", selectStatement));
 		} else {
 			PDObjDefs od = new PDObjDefs(sesion);
 			od.Load(tipo);
 			String tipoObj = od.getClassType();
 			if (tipoObj.equalsIgnoreCase("document")) {
-				listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext,inTree, sesion, tipo, selectStatement));
+				listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext, inTree, sesion, tipo, selectStatement));
 			} else {
-				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext,inTree, sesion, "PD_FOLDERS", selectStatement));
+				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext, inTree, sesion, "PD_FOLDERS", selectStatement));
 			}
 		}
 		return listaSalida;

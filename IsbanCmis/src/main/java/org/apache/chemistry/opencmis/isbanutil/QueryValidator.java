@@ -14,9 +14,14 @@ public class QueryValidator {
 		validado = valSelect(select); // SELECT VALIDATION
 
 		if (validado) {// FROM VALIDATION
+			if(query.toLowerCase().indexOf("where")>0) {
 			String from = query.substring(query.toLowerCase().indexOf("from") + 4,
 					query.toLowerCase().indexOf("where"));
 			validado = valFrom(from);
+			}else {
+				String from = query.substring(query.toLowerCase().indexOf("from") + 4,query.length());
+				validado = valFrom(from);
+			}
 		}
 		// Opcionales
 
