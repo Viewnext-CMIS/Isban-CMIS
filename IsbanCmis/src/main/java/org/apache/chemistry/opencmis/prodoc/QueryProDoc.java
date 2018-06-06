@@ -120,7 +120,12 @@ public class QueryProDoc {
         String pTable = docType;
 
         Expression where = selectStatement.getWhere();
-        Conditions condProdoc = getConditions(where, null, sesion, false, docType);
+        Conditions condProdoc = new Conditions();
+        
+        if(where != null) {
+            condProdoc = getConditions(where, null, sesion, false, docType);    
+        }
+        
 
         List order = selectStatement.getOrderByElements();
         Vector pOrder = new Vector();
@@ -137,10 +142,13 @@ public class QueryProDoc {
         }
 
         String IdActFold = "RootFolder";
-        // Boolean inTree = true;
+        if (inTree != null || !inTree.equals("")) {
+            IdActFold = inTree;
+        }
+        
         Cursor cur = new Cursor();
 
-        if (fullText == null || fullText.equals("")) {
+        if (fullText == null || fullText.equals("") && inTree == null || inTree.equals("")) {
             cur = doc.Search(docType, condProdoc, false, false, false, IdActFold, pOrder);
         } else { // Si tiene CONTAINS
 
@@ -379,7 +387,7 @@ public class QueryProDoc {
     }
 
     /**
-     * Obtiene las consdiciones de búsqueda
+     * Obtiene las condiciones de búsqueda
      * 
      * @param where
      * @param padre
@@ -390,6 +398,7 @@ public class QueryProDoc {
      */
     private static Conditions getConditions(Expression where, Conditions padre, DriverGeneric sesion, boolean isFolder,
             String docType) {
+        
         if (where instanceof AndExpression) {
             Conditions and = new Conditions();
             AndExpression andEx = (AndExpression) where;
@@ -433,6 +442,11 @@ public class QueryProDoc {
             if (!campo.equals("Function_Contains")) {
 
                 if (campo.equals("Function_InTree")) {
+                    campo = "ParentId";
+                    valOper = 5; // distinto
+                    valor = "*_-*";
+                }
+                if(campo.equals("function_InFolder")){
                     campo = "ParentId";
                 }
 
