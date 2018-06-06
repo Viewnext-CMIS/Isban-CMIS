@@ -205,7 +205,7 @@ public class QueryUtil {
 	private static String getInFolder(String select, String inFolder) {
 		String first = select.substring(0, select.indexOf(inFolder));
 		String end = select.substring(first.length() + ("in_folder".length()), select.length());
-		String valor = end.substring(0, end.indexOf("\")") + 2);
+		String valor = end.substring(0, end.indexOf("\')") + 2);
 		end = end.substring(valor.length(), end.length());
 		valor = valor.replace("(", "");
 		valor = valor.replace(")", "");
@@ -214,7 +214,7 @@ public class QueryUtil {
 			valor = (valor.split(","))[1].trim();
 		}
 
-		select = first + "function_InFolder=" + "\"" + valor + "\"" + end;
+		select = first + "function_InFolder=" + valor + end;
 
 		select.toString();
 
