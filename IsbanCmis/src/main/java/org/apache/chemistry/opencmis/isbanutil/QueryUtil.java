@@ -69,7 +69,7 @@ public class QueryUtil {
 			if (tipoObj.equalsIgnoreCase("document")) {
 				listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext, inTree, sesion, tipo, selectStatement));
 			} else {
-				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext, inTree, sesion, "PD_FOLDERS", selectStatement));
+				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext, inTree, sesion, tipo, selectStatement));
 			}
 		}
 		return listaSalida;
