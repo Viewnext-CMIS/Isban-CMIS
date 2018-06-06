@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
@@ -14,7 +15,12 @@ import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Parenthesis;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
+import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
+import net.sf.jsqlparser.expression.operators.relational.InExpression;
+import net.sf.jsqlparser.expression.operators.relational.ItemsList;
+import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.SubSelect;
 import prodoc.Attribute;
 import prodoc.Condition;
 import prodoc.Conditions;
@@ -42,8 +48,8 @@ public class QueryProDoc {
             put(">=", 3);
             put("<=", 4);
             put("<>", 5);
-            // put("cINList", 6);
-            // put("cINQuery", 7);
+            put("cINList", 6);
+            put("cINQuery", 7);
             put("like", 8);
         }
     };
@@ -71,10 +77,15 @@ public class QueryProDoc {
         String pTable = docType;
 
         Expression where = selectStatement.getWhere();
-        Conditions condProdoc = getConditions(where, null, sesion, true, docType);
+
+        Conditions condProdoc = new Conditions();
+
+        if (where != null) {
+            condProdoc = getConditions(where, null, sesion, true, docType);
+        }
 
         List order = selectStatement.getOrderByElements();
-        Vector pOrder = null;
+        Vector pOrder = new Vector();
         if (order != null) {
 
             Iterator it = order.iterator();
@@ -87,7 +98,26 @@ public class QueryProDoc {
             }
         }
 
-        Cursor cur = objFolder.Search(docType, condProdoc, false, false, "RootFolder", pOrder);
+        String IdActFold = "RootFolder";
+        if ((inTree != null) && !(inTree.isEmpty())) {
+            IdActFold = inTree;
+        }
+
+        Cursor cur = new Cursor();
+
+        if (inTree == null || inTree.equals("")) {
+            cur = objFolder.Search(docType, condProdoc, false, false, IdActFold, pOrder);
+        } else { // Si tiene CONTAINS
+
+            if (condProdoc == null) {
+                Conditions condsDoc = new Conditions();
+
+                cur = objFolder.Search(docType, condsDoc, false, true, IdActFold, pOrder);
+            } else {
+                cur = objFolder.Search(docType, condProdoc, false, true, IdActFold, pOrder);
+            }
+
+        }
 
         Record record = objFolder.getDrv().NextRec(cur);
 
@@ -96,6 +126,7 @@ public class QueryProDoc {
         objFolder.getDrv().CloseCursor(cur);
 
         return result;
+
     }
 
     /**
@@ -121,11 +152,10 @@ public class QueryProDoc {
 
         Expression where = selectStatement.getWhere();
         Conditions condProdoc = new Conditions();
-        
-        if(where != null) {
-            condProdoc = getConditions(where, null, sesion, false, docType);    
+
+        if (where != null) {
+            condProdoc = getConditions(where, null, sesion, false, docType);
         }
-        
 
         List order = selectStatement.getOrderByElements();
         Vector pOrder = new Vector();
@@ -142,10 +172,10 @@ public class QueryProDoc {
         }
 
         String IdActFold = "RootFolder";
-        if (inTree != null || !inTree.equals("")) {
+        if ((inTree != null) && !(inTree.isEmpty())) {
             IdActFold = inTree;
         }
-        
+
         Cursor cur = new Cursor();
 
         if (fullText == null || fullText.equals("") && inTree == null || inTree.equals("")) {
@@ -155,9 +185,6 @@ public class QueryProDoc {
             if (condProdoc == null) {
                 Conditions condsDoc = new Conditions();
 
-                // Cursor Search(String FTQuery, String DocType, Conditions AttrConds, boolean
-                // SubTypes, boolean SubFolders, boolean IncludeVers, String IdActFold, Vector
-                // Ord)
                 cur = doc.Search(fullText, docType, condsDoc, false, true, false, IdActFold, pOrder);
             } else {
                 cur = doc.Search(fullText, docType, condProdoc, false, true, false, IdActFold, pOrder);
@@ -398,7 +425,7 @@ public class QueryProDoc {
      */
     private static Conditions getConditions(Expression where, Conditions padre, DriverGeneric sesion, boolean isFolder,
             String docType) {
-        
+
         if (where instanceof AndExpression) {
             Conditions and = new Conditions();
             AndExpression andEx = (AndExpression) where;
@@ -423,7 +450,6 @@ public class QueryProDoc {
         } else if (where instanceof Parenthesis) {
             Conditions parenthCond = new Conditions();
             Parenthesis parEx = (Parenthesis) where;
-            // parenth.setOperatorAnd(false);
             boolean or = parEx.isNot();
             Expression expre = parEx.getExpression();
             parenthCond = getConditions(parEx.getExpression(), parenthCond, sesion, isFolder, docType);
@@ -432,11 +458,90 @@ public class QueryProDoc {
             } else {
                 padre.addCondition(parenthCond);
             }
+
+        } else if (where instanceof InExpression) {
+
+            InExpression inExpre = (InExpression) where;
+            String campo = inExpre.getLeftExpression().toString();
+
+            Condition prodocCond = null;
+            HashSet<Object> hashSet = new HashSet<>();
+
+            if (inExpre.getItemsList() instanceof ExpressionList) {
+                List expressList = ((ExpressionList) inExpre.getItemsList()).getExpressions();
+                if (expressList != null) {
+
+                    Iterator it = expressList.iterator();
+                    while (it.hasNext()) {
+
+                        Object objIt = it.next();
+                        String nombre = objIt.toString();
+
+                        hashSet.add(nombre);
+                    }
+                }
+
+                try {
+                    prodocCond = new Condition(campo, hashSet);
+                } catch (PDException e) {
+                    e.printStackTrace();
+                }
+
+                if (padre == null) {
+                    padre = new Conditions();
+                }
+
+                padre.addCondition(prodocCond);
+
+            } else if (inExpre.getItemsList() instanceof SubSelect) {
+//  ESTO ES LO ULTIMO QUE TENIA              
+//              //String query = QueryUtil.adaptarAProdoc(statement).trim();
+//                String query = inExpre.getItemsList().toString();
+//                String contains = QueryUtil.getAddParam(query, 0);
+//                String inTree = QueryUtil.getAddParam(query, 1);
+//
+//                Statement x = managerSql.parse(new StringReader(query));
+//                if (x instanceof Select) {
+//                    PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
+//                    FromItem from = selectStatement.getFromItem();
+//                    listaSalida.addAll(goToQuery(from.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
+//                    if (!selectStatement.getJoins().isEmpty()) {
+//                        Iterator it = selectStatement.getJoins().iterator();
+//                        while (it.hasNext()) {
+//                            Join j = (Join) it.next();
+//                            listaSalida.addAll(
+//                                    goToQuery(j.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
+//                        }
+//                    }
+//
+//                }
+//                
+//                
+//                
+//                ItemsList subSelect = inExpre.getItemsList();
+//                FromItem fromSub = ((PlainSelect) subSelect).getFromItem();
+//                Expression whereSub = ((PlainSelect) subSelect).getWhere();
+////                subSelect.
+////                subQuery = new Query(String pTable, Record pFields, Conditions pWhere);
+//                
+//                // Condition(String pField, Query Search) 
+                
+                
+                
+                ItemsList subSelect = inExpre.getItemsList();
+                FromItem fromSub = ((PlainSelect) subSelect).getFromItem();
+                Expression whereSub = ((PlainSelect) subSelect).getWhere();
+//                subSelect.
+//                subQuery = new Query(String pTable, Record pFields, Conditions pWhere);
+                
+                // Condition(String pField, Query Search) 
+            }
+
         } else {
             BinaryExpression be = (BinaryExpression) where;
             String campo = be.getLeftExpression().toString();
             String oper = be.getStringExpression().toString();
-            int valOper = valOperComp.get(oper);
+            int valOper = valOperComp.get(oper.toLowerCase());
             String valor = be.getRightExpression().toString();
 
             if (!campo.equals("Function_Contains")) {
@@ -446,7 +551,7 @@ public class QueryProDoc {
                     valOper = 5; // distinto
                     valor = "*_-*";
                 }
-                if(campo.equals("function_InFolder")){
+                if (campo.equals("function_InFolder")) {
                     campo = "ParentId";
                 }
 
