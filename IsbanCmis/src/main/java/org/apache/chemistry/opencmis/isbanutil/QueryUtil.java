@@ -3,6 +3,14 @@ package org.apache.chemistry.opencmis.isbanutil;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
+
+import org.apache.chemistry.opencmis.prodoc.QueryProDoc;
+
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import prodoc.DriverGeneric;
+import prodoc.PDException;
+import prodoc.PDObjDefs;
 
 public class QueryUtil {
 
@@ -35,6 +43,38 @@ public class QueryUtil {
 			put("like", 8);
 		}
 	};
+	
+	/**
+	 * 
+	 * @param tipo
+	 * @param statement
+	 * @param sesion
+	 * @param selectStatement
+	 * @return
+	 * @throws PDException
+	 */
+	public static Vector<String> goToQuery(String tipo, String fulltext, String inTree, DriverGeneric sesion,
+			PlainSelect selectStatement) throws PDException {
+		Vector<String> listaSalida = new Vector<>();
+		if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
+
+			listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext, inTree, sesion, "PD_DOCS", selectStatement));
+
+		} else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
+			listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext, inTree, sesion, "PD_FOLDERS", selectStatement));
+		} else {
+			PDObjDefs od = new PDObjDefs(sesion);
+			od.Load(tipo);
+			String tipoObj = od.getClassType();
+			if (tipoObj.equalsIgnoreCase("document")) {
+				listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext, inTree, sesion, tipo, selectStatement));
+			} else {
+				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext, inTree, sesion, "PD_FOLDERS", selectStatement));
+			}
+		}
+		return listaSalida;
+	}
+
 
 	public static Integer getProdocOper(String operador) {
 		return valOperComp.get(operador.trim()) != null ? valOperComp.get(operador.trim()) : null;

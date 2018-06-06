@@ -120,7 +120,6 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderContainerImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderListImpl;
-import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectListImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectParentDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PartialContentStreamImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.PermissionDefinitionDataImpl;
@@ -462,13 +461,13 @@ public class FileShareRepository {
 				PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
 				FromItem from = selectStatement.getFromItem();
 				listaSalida.addAll(
-						goToQuery(from.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
+						QueryUtil.goToQuery(from.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
 				if (!selectStatement.getJoins().isEmpty()) {
 					Iterator it = selectStatement.getJoins().iterator();
 					while (it.hasNext()) {
 						Join j = (Join) it.next();
 						listaSalida.addAll(
-								goToQuery(j.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
+								QueryUtil.goToQuery(j.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
 					}
 				}
 
@@ -486,36 +485,6 @@ public class FileShareRepository {
 
 	}
 
-	/**
-	 * 
-	 * @param tipo
-	 * @param statement
-	 * @param sesion
-	 * @param selectStatement
-	 * @return
-	 * @throws PDException
-	 */
-	private Vector<String> goToQuery(String tipo, String fulltext, String inTree, DriverGeneric sesion,
-			PlainSelect selectStatement) throws PDException {
-		Vector<String> listaSalida = new Vector<>();
-		if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
-
-			listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext, inTree, sesion, "PD_DOCS", selectStatement));
-
-		} else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
-			listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext, inTree, sesion, "PD_FOLDERS", selectStatement));
-		} else {
-			PDObjDefs od = new PDObjDefs(sesion);
-			od.Load(tipo);
-			String tipoObj = od.getClassType();
-			if (tipoObj.equalsIgnoreCase("document")) {
-				listaSalida.addAll(QueryProDoc.busquedaDoc(fulltext, inTree, sesion, tipo, selectStatement));
-			} else {
-				listaSalida.addAll(QueryProDoc.busquedaFolder(fulltext, inTree, sesion, "PD_FOLDERS", selectStatement));
-			}
-		}
-		return listaSalida;
-	}
 
 	/**
 	 * Solo para pruebas
