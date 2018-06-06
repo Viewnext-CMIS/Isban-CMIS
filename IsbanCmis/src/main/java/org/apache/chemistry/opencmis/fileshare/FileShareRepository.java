@@ -477,9 +477,9 @@ public class FileShareRepository {
 		} catch (JSQLParserException e) {
 			throw new CmisInvalidArgumentException(e.getCause().getMessage());
 		} catch (PDException ex) {
-			throw new CmisInvalidArgumentException(ex.getCause().getMessage());
+			throw new CmisInvalidArgumentException(ex.getMessage());
 		}catch(Exception exc) {
-			throw new CmisInvalidArgumentException(exc.getMessage());
+			throw exc;
 		}
 
 		return null;

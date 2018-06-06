@@ -1,12 +1,14 @@
 package org.apache.chemistry.opencmis.isbanutil;
 
+import org.apache.chemistry.opencmis.commons.exceptions.CmisInvalidArgumentException;
+
 public class QueryValidator {
 	/**
 	 * 
 	 * @param query
 	 * @return
 	 */
-	public static boolean validarStatement(String query) {
+	public static boolean validarStatement(String query) throws CmisInvalidArgumentException {
 		boolean validado = false;
 		// Obligatorios
 
@@ -19,8 +21,7 @@ public class QueryValidator {
 					query.toLowerCase().indexOf("where"));
 			validado = valFrom(from);
 			}else {
-				String from = query.substring(query.toLowerCase().indexOf("from") + 4,query.length());
-				validado = valFrom(from);
+				throw new CmisInvalidArgumentException ("A minimum condition is needed.");
 			}
 		}
 		// Opcionales
@@ -75,7 +76,8 @@ public class QueryValidator {
 	private static boolean valWhere(String where) {
 		boolean validado = false;
 		// Comprobamos el primer nivel y contains and tree
-		if (!valContains(where) || !valInTree(where)) {
+		
+		if (!valContains(where) || !valInTree(where) ) {
 			validado = false;
 		} else {
 			validado = true;
