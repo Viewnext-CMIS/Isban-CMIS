@@ -207,11 +207,11 @@ public class QueryUtil {
 		String end = select.substring(first.length() + ("in_folder".length()), select.length());
 		String valor = end.substring(0, end.indexOf("\')") + 2);
 		end = end.substring(valor.length(), end.length());
-		valor = valor.replace("(", "");
-		valor = valor.replace(")", "");
+		valor = valor.replace("('", "");
+		valor = valor.replace("')", "");
 		valor = valor.replace("\"", "");
 		if (valor.contains(",")) {
-			valor = (valor.split(","))[1].trim();
+			valor = (valor.split(","))[1].trim().replace("'", "");
 		}
 
 		select = first + "function_InFolder=" + valor + end;
