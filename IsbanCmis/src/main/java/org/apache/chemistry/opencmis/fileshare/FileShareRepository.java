@@ -460,8 +460,8 @@ public class FileShareRepository {
 			if (x instanceof Select) {
 				PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
 				FromItem from = selectStatement.getFromItem();
-				listaSalida.addAll(
-						QueryUtil.goToQuery(from.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
+				listaSalida.addAll(QueryUtil.goToQuery(from.toString(), contains, inTree, sesProdoc.getMainSession(),
+						selectStatement));
 				if (!selectStatement.getJoins().isEmpty()) {
 					Iterator it = selectStatement.getJoins().iterator();
 					while (it.hasNext()) {
@@ -477,14 +477,13 @@ public class FileShareRepository {
 			throw new CmisInvalidArgumentException(e.getCause().getMessage());
 		} catch (PDException ex) {
 			throw new CmisInvalidArgumentException(ex.getMessage());
-		}catch(Exception exc) {
+		} catch (Exception exc) {
 			throw exc;
 		}
 
 		return null;
 
 	}
-
 
 	/**
 	 * Solo para pruebas
