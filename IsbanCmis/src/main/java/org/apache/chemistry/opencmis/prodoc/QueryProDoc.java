@@ -17,10 +17,7 @@ import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
-import net.sf.jsqlparser.expression.operators.relational.ItemsList;
-import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.SubSelect;
 import prodoc.Attribute;
 import prodoc.Condition;
 import prodoc.Conditions;
@@ -201,6 +198,7 @@ public class QueryProDoc {
         return result;
     }
 
+    
     /**
      * Obtiene el resultado de la busqueda
      * 
@@ -427,6 +425,7 @@ public class QueryProDoc {
             String docType) {
 
         if (where instanceof AndExpression) {
+
             Conditions and = new Conditions();
             AndExpression andEx = (AndExpression) where;
             and = getConditions(andEx.getLeftExpression(), and, sesion, isFolder, docType);
@@ -436,7 +435,9 @@ public class QueryProDoc {
             } else {
                 padre.addCondition(and);
             }
+
         } else if (where instanceof OrExpression) {
+
             Conditions or = new Conditions();
             OrExpression orEx = (OrExpression) where;
             or.setOperatorAnd(false);
@@ -447,7 +448,9 @@ public class QueryProDoc {
             } else {
                 padre.addCondition(or);
             }
+
         } else if (where instanceof Parenthesis) {
+
             Conditions parenthCond = new Conditions();
             Parenthesis parEx = (Parenthesis) where;
             boolean or = parEx.isNot();
@@ -493,49 +496,33 @@ public class QueryProDoc {
 
                 padre.addCondition(prodocCond);
 
-            } else if (inExpre.getItemsList() instanceof SubSelect) {
-//  ESTO ES LO ULTIMO QUE TENIA              
-//              //String query = QueryUtil.adaptarAProdoc(statement).trim();
-//                String query = inExpre.getItemsList().toString();
-//                String contains = QueryUtil.getAddParam(query, 0);
-//                String inTree = QueryUtil.getAddParam(query, 1);
-//
-//                Statement x = managerSql.parse(new StringReader(query));
-//                if (x instanceof Select) {
-//                    PlainSelect selectStatement = (PlainSelect) ((Select) x).getSelectBody();
-//                    FromItem from = selectStatement.getFromItem();
-//                    listaSalida.addAll(goToQuery(from.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
-//                    if (!selectStatement.getJoins().isEmpty()) {
-//                        Iterator it = selectStatement.getJoins().iterator();
-//                        while (it.hasNext()) {
-//                            Join j = (Join) it.next();
-//                            listaSalida.addAll(
-//                                    goToQuery(j.toString(), contains, inTree, sesProdoc.getMainSession(), selectStatement));
-//                        }
-//                    }
-//
-//                }
-//                
-//                
-//                
-//                ItemsList subSelect = inExpre.getItemsList();
-//                FromItem fromSub = ((PlainSelect) subSelect).getFromItem();
-//                Expression whereSub = ((PlainSelect) subSelect).getWhere();
-////                subSelect.
-////                subQuery = new Query(String pTable, Record pFields, Conditions pWhere);
-//                
-//                // Condition(String pField, Query Search) 
-                
-                
-                
-                ItemsList subSelect = inExpre.getItemsList();
-                FromItem fromSub = ((PlainSelect) subSelect).getFromItem();
-                Expression whereSub = ((PlainSelect) subSelect).getWhere();
-//                subSelect.
-//                subQuery = new Query(String pTable, Record pFields, Conditions pWhere);
-                
-                // Condition(String pField, Query Search) 
             }
+            // // Si hay una SubSelect
+            // else if (inExpre.getItemsList() instanceof SubSelect) {
+            //
+            // PlainSelect selectStatement = (PlainSelect) ((SubSelect)
+            // inExpre.getItemsList()).getSelectBody();
+            // Expression parEx = selectStatement.getWhere();
+            // Conditions conds = null;
+            // String pTable = docType;
+            // Record pFields = getRecordStruct(sesion, isFolder, docType);
+            // String campoSubSelect = inExpre.getLeftExpression().toString();
+            // Conditions pWhere = getConditions(parEx, conds, sesion, isFolder, docType);
+            // Query subSelect = new Query(pTable, pFields, pWhere);
+            //
+            // try {
+            // prodocCond = new Condition(campoSubSelect, subSelect);
+            // } catch (PDException e) {
+            // e.printStackTrace();
+            // }
+            //
+            // if (padre == null) {
+            // padre = new Conditions();
+            // }
+            //
+            // padre.addCondition(prodocCond);
+            //
+            // }
 
         } else {
             BinaryExpression be = (BinaryExpression) where;
@@ -544,13 +531,15 @@ public class QueryProDoc {
             int valOper = valOperComp.get(oper.toLowerCase());
             String valor = be.getRightExpression().toString();
 
-            if (!campo.equals("Function_Contains")) {
+            if (!campo.equals("Function_Contains") && !campo.equals("Function_InTree")) {
 
-                if (campo.equals("Function_InTree")) {
-                    campo = "ParentId";
-                    valOper = 5; // distinto
-                    valor = "*_-*";
-                }
+                // Si solo viene la condicion del In_Tree
+                // if (campo.equals("Function_InTree")) {
+                // campo = "ParentId";
+                // valOper = 5; // distinto
+                // valor = "*_-*";
+                // }
+
                 if (campo.equals("function_InFolder")) {
                     campo = "ParentId";
                 }
@@ -565,6 +554,36 @@ public class QueryProDoc {
         }
 
         return padre;
+    }
+
+    /**
+     * Solo para pruebas
+     * 
+     * @param listaSalida
+     * @param camposSelect
+     */
+    private static void mostrar(Vector<String> listaSalida, List<String> camposSelect) {
+        String cabecera = "";
+        for (String a : camposSelect) {
+            if (cabecera != "") {
+                cabecera += " || ";
+            }
+            cabecera += a;
+        }
+        System.out.println(cabecera);
+        System.out.println("_____________________________________");
+        for (String a : listaSalida) {
+            String salida = "";
+            String[] mostrar = a.split("&&");
+            for (String x : mostrar) {
+                if (salida != "") {
+                    salida += " || ";
+                }
+                salida += x;
+            }
+            System.out.println(salida);
+        }
+
     }
 
     /**
@@ -679,35 +698,34 @@ public class QueryProDoc {
     // return vectTables;
     // }
 
-    // /**
-    // * Metodo para obtener la estructura record dependiendo del tipo de objeto y
-    // el
-    // * dovType
-    // *
-    // * @param MainSession
-    // * @param isFolder
-    // * @param docType
-    // * @return
-    // */
-    // private static Record getRecordStruct(DriverGeneric MainSession, boolean
-    // isFolder, String docType) {
-    //
-    // Record pFields = null;
-    // try {
-    // if (isFolder) {
-    // PDFolders folder = new PDFolders(MainSession);
-    // pFields = folder.getRecSum();
-    // } else {
-    // PDDocs doc = new PDDocs(MainSession);
-    // doc.setDocType(docType);
-    // pFields = doc.getRecSum();
-    // }
-    // } catch (PDException ex) {
-    // Logger.getLogger(QueryProDoc.class.getName()).log(Level.SEVERE, null, ex);
-    // }
-    //
-    // return pFields;
-    // }
+    /**
+     * Metodo para obtener la estructura record dependiendo del tipo de objeto y el
+     * docType
+     *
+     * @param MainSession
+     * @param isFolder
+     * @param docType
+     * @return
+     */
+    private static Record getRecordStruct(DriverGeneric MainSession, boolean isFolder, String docType) {
+
+        Record pFields = null;
+        try {
+            if (isFolder) {
+                PDFolders folder = new PDFolders(MainSession);
+                pFields = folder.getRecSum();
+            } else {
+                PDDocs doc = new PDDocs(MainSession);
+                doc.setDocType(docType);
+                pFields = doc.getRecSum();
+            }
+        } catch (PDException ex) {
+            // Logger.getLogger(QueryProDoc.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
+        }
+
+        return pFields;
+    }
 
     // /**
     // * Metodo que obtiene las condiciones de la query
