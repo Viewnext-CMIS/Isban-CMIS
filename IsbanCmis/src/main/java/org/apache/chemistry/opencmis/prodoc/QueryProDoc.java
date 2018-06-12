@@ -3,12 +3,15 @@ package org.apache.chemistry.opencmis.prodoc;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+
+import org.apache.chemistry.opencmis.commons.exceptions.CmisInvalidArgumentException;
 
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
@@ -50,6 +53,11 @@ public class QueryProDoc {
             put("like", 8);
         }
     };
+
+    static final List<String> camposCalculados = Arrays.asList("baseTypeId", "changetoken", "isLatestVersion",
+            "isLatestMajorVersion", "IsPrivateWorkingCopy", "isVersionSeriesCheckedOut", "versionSeriesCheckedOutId",
+            "contentStreamLength", "contentStreamId", "path", "allowedChildObjectTypeIds", "sourceId", "targetId",
+            "policyText");
 
     public QueryProDoc() {
 
@@ -198,7 +206,6 @@ public class QueryProDoc {
         return result;
     }
 
-    
     /**
      * Obtiene el resultado de la busqueda
      * 
@@ -221,29 +228,12 @@ public class QueryProDoc {
             obj = (PDDocs) obj;
         }
 
-        Iterator it = camposSelect.iterator();
-
-        // ELIMINAR - SOLO ES PARA MOSTRAR EN EVIDENCIAS
-        while (it.hasNext()) {
-
-            Object objIt = it.next();
-            String nombre = objIt.toString();
-
-            System.out.print("   " + nombre + "   ||");
-
-        }
-        System.out.println("");
-        System.out.println("-------------------------------------------------");
-
         while (record != null) {
 
             String recordString = "";
 
-            // ELIMINAR - SOLO ES PARA MOSTRAR EN EVIDENCIAS
-            String cadenaAMostrar = "";
-
             // Iterator it = camposSelect.iterator();
-            it = camposSelect.iterator();
+            Iterator it = camposSelect.iterator();
 
             while (it.hasNext()) {
 
@@ -266,14 +256,12 @@ public class QueryProDoc {
                     strMostrar = (String) rec.getAttr("Parent").getValue();
 
                     recordString = recordString.concat(strMostrar).concat("&&");
-                    cadenaAMostrar = cadenaAMostrar.concat(strMostrar).concat(" || ");
                     enc = true;
                     break;
 
                 // Tipo cmis:isImmutable
                 case "isImmutable":
                     recordString = recordString.concat("true").concat("&&");
-                    cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
                     enc = true;
                     break;
 
@@ -282,10 +270,8 @@ public class QueryProDoc {
                     String strWhere = where.toString();
                     if (strWhere.contains("Version")) {
                         recordString = recordString.concat("false").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("false").concat(" || ");
                     } else {
                         recordString = recordString.concat("true").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
                     }
                     enc = true;
                     break;
@@ -295,10 +281,8 @@ public class QueryProDoc {
                     String strWhere1 = where.toString();
                     if (strWhere1.contains("Version")) {
                         recordString = recordString.concat("false").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("false").concat(" || ");
                     } else {
                         recordString = recordString.concat("true").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
                     }
                     enc = true;
                     break;
@@ -306,7 +290,6 @@ public class QueryProDoc {
                 // Tipo cmis:isMajorVersion
                 case "isMajorVersion":
                     recordString = recordString.concat("true").concat("&&");
-                    cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
                     enc = true;
                     break;
 
@@ -316,10 +299,8 @@ public class QueryProDoc {
                     String usuSesion = obj.getDrv().getUser().getName();
                     if (attrLockedBy.getValue() != null && attrLockedBy.getValue().toString().equals(usuSesion)) {
                         recordString = recordString.concat("true").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
                     } else {
                         recordString = recordString.concat("false").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("false").concat(" || ");
                     }
                     enc = true;
                     break;
@@ -329,7 +310,6 @@ public class QueryProDoc {
                     Attribute attrAux = record.getAttr("LockedBy");
                     if (attrAux.getValue() != null) {
                         recordString = recordString.concat("true").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("true").concat(" || ");
                     }
                     enc = true;
                     break;
@@ -340,10 +320,8 @@ public class QueryProDoc {
                     String usuSesion1 = obj.getDrv().getUser().getName();
                     if (attrLockedBy1.getValue() != null && attrLockedBy1.getValue().toString().equals(usuSesion1)) {
                         recordString = recordString.concat(usuSesion1).concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat(usuSesion1).concat(" || ");
                     } else {
                         recordString = recordString.concat("").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("").concat(" || ");
                     }
                     enc = true;
                     break;
@@ -351,7 +329,6 @@ public class QueryProDoc {
                 // cmis:contentStreamId --> Siempre 0
                 case "contentStreamId":
                     recordString = recordString.concat("0").concat("&&");
-                    cadenaAMostrar = cadenaAMostrar.concat("0").concat(" || ");
                     enc = true;
                     break;
 
@@ -364,10 +341,8 @@ public class QueryProDoc {
                         strMostrar = ((PDFolders) obj).getPathId((String) attrPDId.getValue());
 
                         recordString = recordString.concat(strMostrar).concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat(strMostrar).concat(" || ");
                     } else {
                         recordString = recordString.concat("").concat("&&");
-                        cadenaAMostrar = cadenaAMostrar.concat("").concat(" || ");
                     }
 
                     enc = true;
@@ -376,7 +351,6 @@ public class QueryProDoc {
                 // cmis:allowedChildObjectTypeIds --> "not set" siempre
                 case "allowedChildObjectTypeIds":
                     recordString = recordString.concat("not set").concat("&&");
-                    cadenaAMostrar = cadenaAMostrar.concat("not set").concat(" || ");
                     enc = true;
                     break;
 
@@ -386,8 +360,13 @@ public class QueryProDoc {
                         strMostrar = attr.getName();
                         if (strMostrar.equals(nombre)) {
 
-                            recordString = recordString.concat((String) attr.getValue()).concat("&&");
-                            cadenaAMostrar = cadenaAMostrar.concat((String) attr.getValue()).concat(" || ");
+                            if (attr.getType() == 5) {
+                                recordString = recordString.concat(convertirDateToString((Date) attr.getValue()))
+                                        .concat("&&");
+                            } else {
+                                recordString = recordString.concat((String) attr.getValue()).concat("&&");
+                            }
+
                             enc = true;
                         }
 
@@ -399,12 +378,12 @@ public class QueryProDoc {
 
             }
 
-            System.out.println(cadenaAMostrar);
-
             result.add(recordString);
 
             record = obj.getDrv().NextRec(cur);
         }
+
+        mostrar(result, camposSelect);
 
         System.out.println("");
 
@@ -531,29 +510,65 @@ public class QueryProDoc {
             int valOper = valOperComp.get(oper.toLowerCase());
             String valor = be.getRightExpression().toString();
 
-            if (!campo.equals("Function_Contains") && !campo.equals("Function_InTree")) {
+            if (!esCalculado(campo)) {
 
-                // Si solo viene la condicion del In_Tree
-                // if (campo.equals("Function_InTree")) {
-                // campo = "ParentId";
-                // valOper = 5; // distinto
-                // valor = "*_-*";
-                // }
+                if (!campo.equals("Function_Contains") && !campo.equals("Function_InTree")) {
 
-                if (campo.equals("function_InFolder")) {
-                    campo = "ParentId";
+                    // Si solo viene la condicion del In_Tree
+                    // if (campo.equals("Function_InTree")) {
+                    // campo = "ParentId";
+                    // valOper = 5; // distinto
+                    // valor = "*_-*";
+                    // }
+
+                    if (campo.equals("function_InFolder")) {
+                        campo = "ParentId";
+                    }
+
+                    Condition prodocCond = getCond(campo, valOper, valor, sesion, isFolder, docType);
+
+                    if (padre == null) {
+                        padre = new Conditions();
+                    }
+                    padre.addCondition(prodocCond);
                 }
-
-                Condition prodocCond = getCond(campo, valOper, valor, sesion, isFolder, docType);
-
-                if (padre == null) {
-                    padre = new Conditions();
-                }
-                padre.addCondition(prodocCond);
+            } else { // Si es una condicion con un campo calculado
+                throw new CmisInvalidArgumentException("The field " + campo + " is not valid.");
             }
         }
 
         return padre;
+    }
+
+    /**
+     * Convierte un Date en String
+     * 
+     * @param fecha
+     * @return
+     */
+    public static String convertirDateToString(Date fecha) {
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String fechaCadena = sdf.format(fecha);
+
+        return fechaCadena;
+    }
+
+    /**
+     * Para saber si un campo es calculado
+     * 
+     * @param campo
+     * @return
+     */
+    public static Boolean esCalculado(String campo) {
+
+        boolean esCalculado = false;
+
+        if (camposCalculados.contains(campo)) {
+            esCalculado = true;
+        }
+
+        return esCalculado;
     }
 
     /**
@@ -562,14 +577,25 @@ public class QueryProDoc {
      * @param listaSalida
      * @param camposSelect
      */
-    private static void mostrar(Vector<String> listaSalida, List<String> camposSelect) {
+    private static void mostrar(List<String> listaSalida, List camposSelect) {
+
+        Iterator it = camposSelect.iterator();
         String cabecera = "";
-        for (String a : camposSelect) {
+
+        System.out.println(); 
+        
+        while (it.hasNext()) {
+
+            Object objIt = it.next();
+            String nombre = objIt.toString();
+
             if (cabecera != "") {
-                cabecera += " || ";
+                cabecera += "    ||";
             }
-            cabecera += a;
+            cabecera += "   " + nombre;
+
         }
+
         System.out.println(cabecera);
         System.out.println("_____________________________________");
         for (String a : listaSalida) {
@@ -584,15 +610,6 @@ public class QueryProDoc {
             System.out.println(salida);
         }
 
-    }
-
-    /**
-     * 
-     * @return
-     */
-    public static String busquedaVersion() {
-
-        return null;
     }
 
     // /**
