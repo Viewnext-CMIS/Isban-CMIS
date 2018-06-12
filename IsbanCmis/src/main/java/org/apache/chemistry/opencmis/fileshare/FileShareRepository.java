@@ -759,7 +759,7 @@ public class FileShareRepository {
      * CMIS createFolder.
      */
     public String createFolder(CallContext context, Properties properties, String folderId, SesionProDoc sesion) {
-        InsertProDoc.crearCarpeta(properties, sesion);
+        
         debug("createFolder");
         checkUser(context, true);
 
@@ -806,6 +806,8 @@ public class FileShareRepository {
         // write properties
         writePropertiesFile(newFolder, props);
 
+        InsertProDoc.crearCarpeta(properties, sesion, folderId, getId(newFolder));
+        
         return getId(newFolder);
     }
 

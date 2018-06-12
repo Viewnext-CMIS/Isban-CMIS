@@ -21,7 +21,7 @@ public class InsertProDoc {
 	 * @param sesion
 	 * @return
 	 */
-	public static String crearCarpeta(Properties properties, SesionProDoc sesion) {
+	public static String crearCarpeta(Properties properties, SesionProDoc sesion, String parentId, String folderId) {
 
 		PDFolders folder = null;
 		try {
@@ -29,7 +29,12 @@ public class InsertProDoc {
 
 			folder = new PDFolders(sesion.getMainSession());
 			folder.setTitle(nombre.getValues().get(0).toString());
-			folder.setParentId("RootFolder");
+			folder.setPDId(folderId);
+			if(!parentId.equals("@root@")) {
+			    folder.setParentId(parentId);
+			}else {
+			    folder.setParentId("RootFolder");
+			}
 			folder.insert();
 
 		} catch (PDException e) {
