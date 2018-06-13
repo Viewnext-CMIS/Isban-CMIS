@@ -210,7 +210,7 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     public String createDocument(String repositoryId, Properties properties, String folderId,
             ContentStream contentStream, VersioningState versioningState, List<String> policies, Acl addAces,
             Acl removeAces, ExtensionsData extension) {
-        return getRepository().createDocument(getCallContext(), properties, folderId, contentStream, versioningState);
+        return getRepository().createDocument(getCallContext(), properties, folderId, contentStream, versioningState,sesProdoc);
     }
 
     @Override
@@ -305,7 +305,7 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     @Override
     public void updateProperties(String repositoryId, Holder<String> objectId, Holder<String> changeToken,
             Properties properties, ExtensionsData extension) {
-        getRepository().updateProperties(getCallContext(), objectId, properties, this);
+        getRepository().updateProperties(getCallContext(), objectId, properties, this, sesProdoc);
     }
 
     @Override

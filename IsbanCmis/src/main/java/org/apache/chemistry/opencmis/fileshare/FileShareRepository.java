@@ -143,6 +143,7 @@ import org.apache.chemistry.opencmis.isbanutil.QueryUtil;
 import org.apache.chemistry.opencmis.isbanutil.QueryValidator;
 import org.apache.chemistry.opencmis.prodoc.InsertProDoc;
 import org.apache.chemistry.opencmis.prodoc.SesionProDoc;
+import org.apache.chemistry.opencmis.prodoc.UpdateProDoc;
 import org.apache.chemistry.opencmis.server.impl.ServerVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -528,7 +529,10 @@ public class FileShareRepository {
 
         String objectId = null;
         if (type.getBaseTypeId() == BaseTypeId.CMIS_DOCUMENT) {
-            objectId = createDocument(context, properties, folderId, contentStream, versioningState);
+            objectId = createDocument(context, properties, folderId, contentStream, versioningState, null);// TODO: ->
+                                                                                                           // modificar
+                                                                                                           // null por
+                                                                                                           // SesionProdoc
         } else if (type.getBaseTypeId() == BaseTypeId.CMIS_FOLDER) {
             if (contentStream != null || versioningState != null) {
                 throw new CmisInvalidArgumentException("Cannot create a folder with content or a versioning state!");
@@ -547,7 +551,8 @@ public class FileShareRepository {
      * CMIS createDocument.
      */
     public String createDocument(CallContext context, Properties properties, String folderId,
-            ContentStream contentStream, VersioningState versioningState) {
+            ContentStream contentStream, VersioningState versioningState, SesionProDoc sesion) {
+
         debug("createDocument");
         checkUser(context, true);
 
@@ -592,6 +597,10 @@ public class FileShareRepository {
             throw new CmisNameConstraintViolationException("Document already exists!");
         }
 
+        // String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId,
+        // getId(newFile), contentStream);
+        String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId, contentStream, getId(newFile));
+
         // create the file
         try {
             newFile.createNewFile();
@@ -611,7 +620,8 @@ public class FileShareRepository {
         // write properties
         writePropertiesFile(newFile, props);
 
-        return getId(newFile);
+        // return getId(newFile);
+        return idFileOPD;
     }
 
     /**
@@ -759,7 +769,7 @@ public class FileShareRepository {
      * CMIS createFolder.
      */
     public String createFolder(CallContext context, Properties properties, String folderId, SesionProDoc sesion) {
-        
+
         debug("createFolder");
         checkUser(context, true);
 
@@ -806,9 +816,10 @@ public class FileShareRepository {
         // write properties
         writePropertiesFile(newFolder, props);
 
-        InsertProDoc.crearCarpeta(properties, sesion, folderId, getId(newFolder));
-        
-        return getId(newFolder);
+        String idFolderOPD = InsertProDoc.crearCarpeta(properties, sesion, folderId, getId(newFolder));
+
+        // return getId(newFolder);
+        return idFolderOPD;
     }
 
     /**
@@ -987,7 +998,7 @@ public class FileShareRepository {
      * CMIS updateProperties.
      */
     public ObjectData updateProperties(CallContext context, Holder<String> objectId, Properties properties,
-            ObjectInfoHandler objectInfos) {
+            ObjectInfoHandler objectInfos, SesionProDoc sesion) {
         debug("updateProperties");
         boolean userReadOnly = checkUser(context, true);
 
@@ -997,6 +1008,22 @@ public class FileShareRepository {
 
         // get the file or folder
         File file = getFile(objectId.getValue());
+        String objId = objectId.getValue();
+
+        if (file.isDirectory()) {
+            System.out.println("Modificar Carpeta");
+            List<PropertyData<?>> propList = properties.getPropertyList();
+            
+            try {
+                String idMod = UpdateProDoc.modificarCarpeta(properties, objId, sesion);
+            } catch (PDException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+        } else {
+            System.out.println("Modificar Documento");         
+        }
 
         // get and check the new name
         String newName = FileShareUtils.getStringProperty(properties, PropertyIds.NAME);
@@ -1152,7 +1179,7 @@ public class FileShareRepository {
             }
             try {
                 Holder<String> oidHolder = new Holder<String>(oid.getId());
-                updateProperties(context, oidHolder, properties, objectInfos);
+                updateProperties(context, oidHolder, properties, objectInfos, null); // TODO --> Falta SesionProDoc
 
                 result.add(new BulkUpdateObjectIdAndChangeTokenImpl(oid.getId(), oidHolder.getValue(), null));
             } catch (CmisBaseException e) {
