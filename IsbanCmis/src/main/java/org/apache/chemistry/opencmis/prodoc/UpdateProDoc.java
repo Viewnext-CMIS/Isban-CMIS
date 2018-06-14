@@ -24,9 +24,7 @@ public class UpdateProDoc {
         super();
     }
 
-    // (CallContext context, Holder<String> objectId, Properties properties,
-    // ObjectInfoHandler objectInfos
-    public static String modificarCarpeta(Properties properties, String objectId, SesionProDoc sesion)
+    public static void modificarCarpeta(Properties properties, String objectId, SesionProDoc sesion)
             throws PDException {
 
         PDFolders folder = new PDFolders(sesion.getMainSession());
@@ -45,13 +43,9 @@ public class UpdateProDoc {
             if (attr != null) {
                 attr.setValue(strValorCampo);
             }
-
-            System.out.println("Campo: " + campo);
-
         }
 
-        System.out.println("recFolder: " + recFolder);
-
-        return objectId;
+        folder.assignValues(recFolder);
+        folder.update();
     }
 }

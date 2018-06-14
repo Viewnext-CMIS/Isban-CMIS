@@ -1012,12 +1012,11 @@ public class FileShareRepository {
 
         if (file.isDirectory()) {
             System.out.println("Modificar Carpeta");
-            List<PropertyData<?>> propList = properties.getPropertyList();
+//            List<PropertyData<?>> propList = properties.getPropertyList();
             
             try {
-                String idMod = UpdateProDoc.modificarCarpeta(properties, objId, sesion);
+                UpdateProDoc.modificarCarpeta(properties, objId, sesion);
             } catch (PDException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 
@@ -1219,6 +1218,11 @@ public class FileShareRepository {
         // split filter
         Set<String> filterCollection = FileShareUtils.splitFilter(filter);
 
+        
+// PRUEBA OBTENER PROPERTIES        
+        ObjectInfoImpl objectInfo = new ObjectInfoImpl();
+        Properties props = compileProperties(context, file, filterCollection, objectInfo);
+        
         // gather properties
         return compileObjectData(context, file, filterCollection, iaa, iacl, userReadOnly, objectInfos);
     }
