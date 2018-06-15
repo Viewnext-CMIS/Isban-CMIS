@@ -19,6 +19,7 @@
 package org.apache.chemistry.opencmis.fileshare;
 
 import java.math.BigInteger;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -123,7 +124,7 @@ public class FileShareCmisServiceFactory extends AbstractServiceFactory {
 
 			FileShareCmisService fileShareService = new FileShareCmisService(repositoryManager);
 			sesProdoc = new SesionProDoc("PD",
-					"C:\\Users\\0011557\\git\\Isban-CMIS\\IsbanCmis\\src\\main\\webapp\\WEB-INF\\classes\\prodoc.properties",
+			        "prodoc.properties",
 					context.getUsername(), context.getPassword());
 			fileShareService.setProdoc(sesProdoc);
 			service = (CallContextAwareCmisService) wrapperManager.wrap(fileShareService);
