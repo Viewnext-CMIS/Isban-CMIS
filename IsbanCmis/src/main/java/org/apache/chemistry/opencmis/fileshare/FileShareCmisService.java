@@ -255,7 +255,7 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
             IncludeRelationships includeRelationships, String renditionFilter, Boolean includePolicyIds,
             Boolean includeAcl, ExtensionsData extension) {
         return getRepository().getObject(getCallContext(), objectId, null, filter, includeAllowableActions, includeAcl,
-                this);
+                this, sesProdoc);
     }
 
     @Override
@@ -268,7 +268,7 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
 
     @Override
     public Properties getProperties(String repositoryId, String objectId, String filter, ExtensionsData extension) {
-        ObjectData object = getRepository().getObject(getCallContext(), objectId, null, filter, false, false, this);
+        ObjectData object = getRepository().getObject(getCallContext(), objectId, null, filter, false, false, this, sesProdoc);
         return object.getProperties();
     }
 
@@ -321,7 +321,7 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     public List<ObjectData> getAllVersions(String repositoryId, String objectId, String versionSeriesId, String filter,
             Boolean includeAllowableActions, ExtensionsData extension) {
         ObjectData theVersion = getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter,
-                includeAllowableActions, false, this);
+                includeAllowableActions, false, this, sesProdoc);
 
         return Collections.singletonList(theVersion);
     }
@@ -331,14 +331,14 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
             Boolean major, String filter, Boolean includeAllowableActions, IncludeRelationships includeRelationships,
             String renditionFilter, Boolean includePolicyIds, Boolean includeAcl, ExtensionsData extension) {
         return getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter, includeAllowableActions,
-                includeAcl, this);
+                includeAcl, this, sesProdoc);
     }
 
     @Override
     public Properties getPropertiesOfLatestVersion(String repositoryId, String objectId, String versionSeriesId,
             Boolean major, String filter, ExtensionsData extension) {
         ObjectData object = getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter, false,
-                false, null);
+                false, null, sesProdoc);
 
         return object.getProperties();
     }

@@ -155,7 +155,11 @@ import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
+import prodoc.ObjPD;
+import prodoc.PDDocs;
 import prodoc.PDException;
+import prodoc.PDFolders;
+import prodoc.Record;
 
 /**
  * Implements all repository operations.
@@ -544,7 +548,7 @@ public class FileShareRepository {
             throw new CmisObjectNotFoundException("Cannot create object of type '" + typeId + "'!");
         }
 
-        return compileObjectData(context, getFile(objectId), null, false, false, userReadOnly, objectInfos);
+        return compileObjectData(context, getFile(objectId), null, false, false, userReadOnly, objectInfos, null);
     }
 
     /**
@@ -863,7 +867,7 @@ public class FileShareRepository {
             }
         }
 
-        return compileObjectData(context, newFile, null, false, false, userReadOnly, objectInfos);
+        return compileObjectData(context, newFile, null, false, false, userReadOnly, objectInfos, null);
     }
 
     /**
@@ -1012,8 +1016,7 @@ public class FileShareRepository {
 
         if (file.isDirectory()) {
             System.out.println("Modificar Carpeta");
-//            List<PropertyData<?>> propList = properties.getPropertyList();
-            
+
             try {
                 UpdateProDoc.modificarCarpeta(properties, objId, sesion);
             } catch (PDException e) {
@@ -1021,7 +1024,7 @@ public class FileShareRepository {
             }
 
         } else {
-            System.out.println("Modificar Documento");         
+            System.out.println("Modificar Documento");
         }
 
         // get and check the new name
@@ -1085,7 +1088,7 @@ public class FileShareRepository {
             }
         }
 
-        return compileObjectData(context, newFile, null, false, false, userReadOnly, objectInfos);
+        return compileObjectData(context, newFile, null, false, false, userReadOnly, objectInfos, null);
     }
 
     /**
@@ -1193,7 +1196,7 @@ public class FileShareRepository {
      * CMIS getObject.
      */
     public ObjectData getObject(CallContext context, String objectId, String versionServicesId, String filter,
-            Boolean includeAllowableActions, Boolean includeAcl, ObjectInfoHandler objectInfos) {
+            Boolean includeAllowableActions, Boolean includeAcl, ObjectInfoHandler objectInfos, SesionProDoc sesion) {
         debug("getObject");
         boolean userReadOnly = checkUser(context, false);
 
@@ -1218,13 +1221,8 @@ public class FileShareRepository {
         // split filter
         Set<String> filterCollection = FileShareUtils.splitFilter(filter);
 
-        
-// PRUEBA OBTENER PROPERTIES        
-        ObjectInfoImpl objectInfo = new ObjectInfoImpl();
-        Properties props = compileProperties(context, file, filterCollection, objectInfo);
-        
         // gather properties
-        return compileObjectData(context, file, filterCollection, iaa, iacl, userReadOnly, objectInfos);
+        return compileObjectData(context, file, filterCollection, iaa, iacl, userReadOnly, objectInfos, sesion);
     }
 
     /**
@@ -1422,7 +1420,7 @@ public class FileShareRepository {
 
         // set object info of the the folder
         if (context.isObjectInfoRequired()) {
-            compileObjectData(context, folder, null, false, false, userReadOnly, objectInfos);
+            compileObjectData(context, folder, null, false, false, userReadOnly, objectInfos, null);
         }
 
         // prepare result
@@ -1448,7 +1446,7 @@ public class FileShareRepository {
             // build and add child object
             ObjectInFolderDataImpl objectInFolder = new ObjectInFolderDataImpl();
             objectInFolder.setObject(
-                    compileObjectData(context, child, filterCollection, iaa, false, userReadOnly, objectInfos));
+                    compileObjectData(context, child, filterCollection, iaa, false, userReadOnly, objectInfos, null));
             if (ips) {
                 objectInFolder.setPathSegment(child.getName());
             }
@@ -1494,7 +1492,7 @@ public class FileShareRepository {
 
         // set object info of the the folder
         if (context.isObjectInfoRequired()) {
-            compileObjectData(context, folder, null, false, false, userReadOnly, objectInfos);
+            compileObjectData(context, folder, null, false, false, userReadOnly, objectInfos, null);
         }
 
         // get the tree
@@ -1529,7 +1527,7 @@ public class FileShareRepository {
             // add to list
             ObjectInFolderDataImpl objectInFolder = new ObjectInFolderDataImpl();
             objectInFolder.setObject(compileObjectData(context, child, filter, includeAllowableActions, false,
-                    userReadOnly, objectInfos));
+                    userReadOnly, objectInfos, null));
             if (includePathSegments) {
                 objectInFolder.setPathSegment(child.getName());
             }
@@ -1587,12 +1585,12 @@ public class FileShareRepository {
 
         // set object info of the the object
         if (context.isObjectInfoRequired()) {
-            compileObjectData(context, file, null, false, false, userReadOnly, objectInfos);
+            compileObjectData(context, file, null, false, false, userReadOnly, objectInfos, null);
         }
 
         // get parent folder
         File parent = file.getParentFile();
-        ObjectData object = compileObjectData(context, parent, filterCollection, iaa, false, userReadOnly, objectInfos);
+        ObjectData object = compileObjectData(context, parent, filterCollection, iaa, false, userReadOnly, objectInfos, null);
 
         ObjectParentDataImpl result = new ObjectParentDataImpl();
         result.setObject(object);
@@ -1633,7 +1631,7 @@ public class FileShareRepository {
         }
 
         return compileObjectData(context, file, filterCollection, includeAllowableActions, includeACL, userReadOnly,
-                objectInfos);
+                objectInfos, null);
     }
 
     // --- helpers ---
@@ -1642,11 +1640,11 @@ public class FileShareRepository {
      * Compiles an object type object from a file or folder.
      */
     private ObjectData compileObjectData(CallContext context, File file, Set<String> filter,
-            boolean includeAllowableActions, boolean includeAcl, boolean userReadOnly, ObjectInfoHandler objectInfos) {
+            boolean includeAllowableActions, boolean includeAcl, boolean userReadOnly, ObjectInfoHandler objectInfos, SesionProDoc sesion) {
         ObjectDataImpl result = new ObjectDataImpl();
         ObjectInfoImpl objectInfo = new ObjectInfoImpl();
 
-        result.setProperties(compileProperties(context, file, filter, objectInfo));
+        result.setProperties(compileProperties(context, file, filter, objectInfo, sesion));
 
         if (includeAllowableActions) {
             result.setAllowableActions(compileAllowableActions(file, userReadOnly));
@@ -1669,7 +1667,7 @@ public class FileShareRepository {
      * Gathers all base properties of a file or folder.
      */
     private Properties compileProperties(CallContext context, File file, Set<String> orgfilter,
-            ObjectInfoImpl objectInfo) {
+            ObjectInfoImpl objectInfo, SesionProDoc sesion) {
         if (file == null) {
             throw new IllegalArgumentException("File must not be null!");
         }
@@ -1723,6 +1721,25 @@ public class FileShareRepository {
             objectInfo.setWorkingCopyId(null);
             objectInfo.setWorkingCopyOriginalId(null);
         }
+
+//        Record recObjOPD = null;
+//        ObjPD objOPD = null;
+//        String objectId = null;
+//        
+//        // Obtenemos el record del objeto
+//        try {
+//            if (file.isDirectory()) {
+//                objOPD = (PDFolders) objOPD;
+//                PDFolders folder = new PDFolders(sesion.getMainSession(), objectId);
+//                recObjOPD = folder.getRecord();
+//            } else {
+//                objOPD = (PDDocs) objOPD;
+//                PDDocs doc = new PDDocs(sesion.getMainSession(), objectId);
+//                recObjOPD = doc.getRecord();
+//            }
+//        } catch (PDException e) {
+//            e.printStackTrace();
+//        }
 
         // let's do it
         try {
