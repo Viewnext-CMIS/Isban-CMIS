@@ -25,8 +25,10 @@ public class QueryUtil {
         listaTradMetadatas.put("cmis:lastModifiedBy", "PDAutor");
         listaTradMetadatas.put("cmis:lastModificationDate", "PDDate");
         listaTradMetadatas = Collections.unmodifiableMap(listaTradMetadatas);
+        String a;
     }
 
+    	
     static final HashMap<String, Integer> valOperComp = new HashMap<String, Integer>() {
         /**
          * 
