@@ -74,64 +74,70 @@ public class QueryProDoc {
     public static List<String> busquedaFolder(String fullText, String inTree, DriverGeneric sesion, String docType,
             PlainSelect selectStatement) throws PDException {
 
-        List<String> result = new ArrayList<String>();
-        PDFolders objFolder = new PDFolders(sesion);
-
-        List camposSelect = selectStatement.getSelectItems();
-
-        String pTable = docType;
-
-        Expression where = selectStatement.getWhere();
-
-        Conditions condProdoc = new Conditions();
-
-        if (where != null) {
-            condProdoc = getConditions(where, null, sesion, true, docType);
-        }
-
-        List order = selectStatement.getOrderByElements();
-        Vector pOrder = new Vector();
-        if (order != null) {
-
-            Iterator it = order.iterator();
-            while (it.hasNext()) {
-
-                Object objIt = it.next();
-                String nombre = objIt.toString();
-
-                pOrder.add(nombre);
-            }
-        }
-
-        String IdActFold = "RootFolder";
-        if ((inTree != null) && !(inTree.isEmpty())) {
-            IdActFold = inTree;
-        }
-
+        PDFolders objFolder = null;
         Cursor cur = new Cursor();
+        List<String> result = new ArrayList<String>();
 
-        if (inTree == null || inTree.equals("")) {
-            cur = objFolder.Search(docType, condProdoc, false, false, IdActFold, pOrder);
-        } else { // Si tiene CONTAINS
+        try {
 
-            if (condProdoc == null) {
-                Conditions condsDoc = new Conditions();
+            objFolder = new PDFolders(sesion);
 
-                cur = objFolder.Search(docType, condsDoc, false, true, IdActFold, pOrder);
-            } else {
-                cur = objFolder.Search(docType, condProdoc, false, true, IdActFold, pOrder);
+            List camposSelect = selectStatement.getSelectItems();
+
+            String pTable = docType;
+
+            Expression where = selectStatement.getWhere();
+
+            Conditions condProdoc = new Conditions();
+
+            if (where != null) {
+                condProdoc = getConditions(where, null, sesion, true, docType);
             }
 
+            List order = selectStatement.getOrderByElements();
+            Vector pOrder = new Vector();
+            if (order != null) {
+
+                Iterator it = order.iterator();
+                while (it.hasNext()) {
+
+                    Object objIt = it.next();
+                    String nombre = objIt.toString();
+
+                    pOrder.add(nombre);
+                }
+            }
+
+            String IdActFold = "RootFolder";
+            if ((inTree != null) && !(inTree.isEmpty())) {
+                IdActFold = inTree;
+            }
+
+            if (inTree == null || inTree.equals("")) {
+                cur = objFolder.Search(docType, condProdoc, false, false, IdActFold, pOrder);
+            } else { // Si tiene CONTAINS
+
+                if (condProdoc == null) {
+                    Conditions condsDoc = new Conditions();
+
+                    cur = objFolder.Search(docType, condsDoc, false, true, IdActFold, pOrder);
+                } else {
+                    cur = objFolder.Search(docType, condProdoc, false, true, IdActFold, pOrder);
+                }
+
+            }
+
+            Record record = objFolder.getDrv().NextRec(cur);
+
+            result = obtenerSelectResult(cur, record, objFolder, true, camposSelect, where);
+
+        } catch (PDException e) {
+            throw e;
+        } finally { // Cerramos el cursor
+            objFolder.getDrv().CloseCursor(cur);
         }
-
-        Record record = objFolder.getDrv().NextRec(cur);
-
-        result = obtenerSelectResult(cur, record, objFolder, true, camposSelect, where);
-
-        objFolder.getDrv().CloseCursor(cur);
 
         return result;
-
     }
 
     /**
@@ -146,62 +152,68 @@ public class QueryProDoc {
     public static List<String> busquedaDoc(String fullText, String inTree, DriverGeneric sesion, String docType,
             PlainSelect selectStatement) throws PDException {
 
+        PDDocs doc = null;
+        Cursor cur = new Cursor();
         List<String> result = new ArrayList<String>();
 
-        PDDocs doc = new PDDocs(sesion);
-        doc.setDocType(docType);
+        try {
 
-        List camposSelect = selectStatement.getSelectItems();
+            doc = new PDDocs(sesion);
+            doc.setDocType(docType);
 
-        String pTable = docType;
+            List camposSelect = selectStatement.getSelectItems();
 
-        Expression where = selectStatement.getWhere();
-        Conditions condProdoc = new Conditions();
+            String pTable = docType;
 
-        if (where != null) {
-            condProdoc = getConditions(where, null, sesion, false, docType);
-        }
+            Expression where = selectStatement.getWhere();
+            Conditions condProdoc = new Conditions();
 
-        List order = selectStatement.getOrderByElements();
-        Vector pOrder = new Vector();
-        if (order != null) {
-
-            Iterator it = order.iterator();
-            while (it.hasNext()) {
-
-                Object objIt = it.next();
-                String nombre = objIt.toString();
-
-                pOrder.add(nombre);
-            }
-        }
-
-        String IdActFold = "RootFolder";
-        if ((inTree != null) && !(inTree.isEmpty())) {
-            IdActFold = inTree;
-        }
-
-        Cursor cur = new Cursor();
-
-        if (fullText == null || fullText.equals("") && inTree == null || inTree.equals("")) {
-            cur = doc.Search(docType, condProdoc, false, false, false, IdActFold, pOrder);
-        } else { // Si tiene CONTAINS
-
-            if (condProdoc == null) {
-                Conditions condsDoc = new Conditions();
-
-                cur = doc.Search(fullText, docType, condsDoc, false, true, false, IdActFold, pOrder);
-            } else {
-                cur = doc.Search(fullText, docType, condProdoc, false, true, false, IdActFold, pOrder);
+            if (where != null) {
+                condProdoc = getConditions(where, null, sesion, false, docType);
             }
 
+            List order = selectStatement.getOrderByElements();
+            Vector pOrder = new Vector();
+            if (order != null) {
+
+                Iterator it = order.iterator();
+                while (it.hasNext()) {
+
+                    Object objIt = it.next();
+                    String nombre = objIt.toString();
+
+                    pOrder.add(nombre);
+                }
+            }
+
+            String IdActFold = "RootFolder";
+            if ((inTree != null) && !(inTree.isEmpty())) {
+                IdActFold = inTree;
+            }
+
+            if (fullText == null || fullText.equals("") && inTree == null || inTree.equals("")) {
+                cur = doc.Search(docType, condProdoc, false, false, false, IdActFold, pOrder);
+            } else { // Si tiene CONTAINS
+
+                if (condProdoc == null) {
+                    Conditions condsDoc = new Conditions();
+
+                    cur = doc.Search(fullText, docType, condsDoc, false, true, false, IdActFold, pOrder);
+                } else {
+                    cur = doc.Search(fullText, docType, condProdoc, false, true, false, IdActFold, pOrder);
+                }
+
+            }
+
+            Record record = doc.getDrv().NextRec(cur);
+
+            result = obtenerSelectResult(cur, record, doc, false, camposSelect, where);
+
+        } catch (PDException e) {
+            throw e;
+        } finally { // Cerramos el cursor
+            doc.getDrv().CloseCursor(cur);
         }
-
-        Record record = doc.getDrv().NextRec(cur);
-
-        result = obtenerSelectResult(cur, record, doc, false, camposSelect, where);
-
-        doc.getDrv().CloseCursor(cur);
 
         return result;
     }
@@ -230,9 +242,8 @@ public class QueryProDoc {
 
         while (record != null) {
 
-            String recordString = "";
+            StringBuilder recordString = null;
 
-            // Iterator it = camposSelect.iterator();
             Iterator it = camposSelect.iterator();
 
             while (it.hasNext()) {
@@ -244,24 +255,21 @@ public class QueryProDoc {
                 Attribute attr = record.nextAttr();
 
                 boolean enc = false;
-                String strMostrar = "";
 
                 switch (nombre) {
 
                 // Tipo cmis:baseTypeId
                 case "baseTypeId":
                     PDObjDefs D = new PDObjDefs(obj.getDrv());
-
                     Record rec = D.Load((String) record.getAttr("DocType").getValue());
-                    strMostrar = (String) rec.getAttr("Parent").getValue();
+                    recordString.append((String) rec.getAttr("Parent").getValue()).append("&&");
 
-                    recordString = recordString.concat(strMostrar).concat("&&");
                     enc = true;
                     break;
 
                 // Tipo cmis:isImmutable
                 case "isImmutable":
-                    recordString = recordString.concat("true").concat("&&");
+                    recordString.append("true").append("&&");
                     enc = true;
                     break;
 
@@ -269,9 +277,9 @@ public class QueryProDoc {
                 case "isLatestVersion":
                     String strWhere = where.toString();
                     if (strWhere.contains("Version")) {
-                        recordString = recordString.concat("false").concat("&&");
+                        recordString.append("false").append("&&");
                     } else {
-                        recordString = recordString.concat("true").concat("&&");
+                        recordString.append("true").append("&&");
                     }
                     enc = true;
                     break;
@@ -280,16 +288,16 @@ public class QueryProDoc {
                 case "isLatestMajorVersion":
                     String strWhere1 = where.toString();
                     if (strWhere1.contains("Version")) {
-                        recordString = recordString.concat("false").concat("&&");
+                        recordString.append("false").append("&&");
                     } else {
-                        recordString = recordString.concat("true").concat("&&");
+                        recordString.append("true").append("&&");
                     }
                     enc = true;
                     break;
 
                 // Tipo cmis:isMajorVersion
                 case "isMajorVersion":
-                    recordString = recordString.concat("true").concat("&&");
+                    recordString.append("true").append("&&");
                     enc = true;
                     break;
 
@@ -298,9 +306,9 @@ public class QueryProDoc {
                     Attribute attrLockedBy = record.getAttr("LockedBy");
                     String usuSesion = obj.getDrv().getUser().getName();
                     if (attrLockedBy.getValue() != null && attrLockedBy.getValue().toString().equals(usuSesion)) {
-                        recordString = recordString.concat("true").concat("&&");
+                        recordString.append("true").append("&&");
                     } else {
-                        recordString = recordString.concat("false").concat("&&");
+                        recordString.append("false").append("&&");
                     }
                     enc = true;
                     break;
@@ -309,7 +317,7 @@ public class QueryProDoc {
                 case "isVersionSeriesCheckedOut":
                     Attribute attrAux = record.getAttr("LockedBy");
                     if (attrAux.getValue() != null) {
-                        recordString = recordString.concat("true").concat("&&");
+                        recordString.append("true").append("&&");
                     }
                     enc = true;
                     break;
@@ -319,30 +327,26 @@ public class QueryProDoc {
                     Attribute attrLockedBy1 = record.getAttr("LockedBy");
                     String usuSesion1 = obj.getDrv().getUser().getName();
                     if (attrLockedBy1.getValue() != null && attrLockedBy1.getValue().toString().equals(usuSesion1)) {
-                        recordString = recordString.concat(usuSesion1).concat("&&");
+                        recordString.append(usuSesion1).append("&&");
                     } else {
-                        recordString = recordString.concat("").concat("&&");
+                        recordString.append("").append("&&");
                     }
                     enc = true;
                     break;
 
                 // cmis:contentStreamId --> Siempre 0
                 case "contentStreamId":
-                    recordString = recordString.concat("0").concat("&&");
+                    recordString.append("0").append("&&");
                     enc = true;
                     break;
 
                 // Tipo cmis:path
                 case "path":
-
                     if (isFolder) {
-
                         Attribute attrPDId = record.getAttr("PDId");
-                        strMostrar = ((PDFolders) obj).getPathId((String) attrPDId.getValue());
-
-                        recordString = recordString.concat(strMostrar).concat("&&");
+                        recordString.append(((PDFolders) obj).getPathId((String) attrPDId.getValue())).append("&&");
                     } else {
-                        recordString = recordString.concat("").concat("&&");
+                        recordString.append("").append("&&");
                     }
 
                     enc = true;
@@ -350,21 +354,19 @@ public class QueryProDoc {
 
                 // cmis:allowedChildObjectTypeIds --> "not set" siempre
                 case "allowedChildObjectTypeIds":
-                    recordString = recordString.concat("not set").concat("&&");
+                    recordString.append("not set").append("&&");
                     enc = true;
                     break;
 
                 default:
                     while (attr != null && !enc) {
 
-                        strMostrar = attr.getName();
-                        if (strMostrar.equals(nombre)) {
+                        if (attr.getName().equals(nombre)) {
 
                             if (attr.getType() == 5) {
-                                recordString = recordString.concat(convertirDateToString((Date) attr.getValue()))
-                                        .concat("&&");
+                                recordString.append(convertirDateToString((Date) attr.getValue())).append("&&");
                             } else {
-                                recordString = recordString.concat((String) attr.getValue()).concat("&&");
+                                recordString.append((String) attr.getValue()).append("&&");
                             }
 
                             enc = true;
@@ -378,7 +380,7 @@ public class QueryProDoc {
 
             }
 
-            result.add(recordString);
+            result.add(recordString.toString());
 
             record = obj.getDrv().NextRec(cur);
         }
@@ -399,9 +401,10 @@ public class QueryProDoc {
      * @param isFolder
      * @param docType
      * @return
+     * @throws PDException
      */
     private static Conditions getConditions(Expression where, Conditions padre, DriverGeneric sesion, boolean isFolder,
-            String docType) {
+            String docType) throws PDException {
 
         if (where instanceof AndExpression) {
 
@@ -467,6 +470,7 @@ public class QueryProDoc {
                     prodocCond = new Condition(campo, hashSet);
                 } catch (PDException e) {
                     e.printStackTrace();
+                    throw e;
                 }
 
                 if (padre == null) {
@@ -513,13 +517,6 @@ public class QueryProDoc {
             if (!esCalculado(campo)) {
 
                 if (!campo.equals("Function_Contains") && !campo.equals("Function_InTree")) {
-
-                    // Si solo viene la condicion del In_Tree
-                    // if (campo.equals("Function_InTree")) {
-                    // campo = "ParentId";
-                    // valOper = 5; // distinto
-                    // valor = "*_-*";
-                    // }
 
                     if (campo.equals("function_InFolder")) {
                         campo = "ParentId";
@@ -582,8 +579,8 @@ public class QueryProDoc {
         Iterator it = camposSelect.iterator();
         String cabecera = "";
 
-        System.out.println(); 
-        
+        System.out.println();
+
         while (it.hasNext()) {
 
             Object objIt = it.next();
@@ -723,8 +720,10 @@ public class QueryProDoc {
      * @param isFolder
      * @param docType
      * @return
+     * @throws PDException
      */
-    private static Record getRecordStruct(DriverGeneric MainSession, boolean isFolder, String docType) {
+    private static Record getRecordStruct(DriverGeneric MainSession, boolean isFolder, String docType)
+            throws PDException {
 
         Record pFields = null;
         try {
@@ -737,8 +736,8 @@ public class QueryProDoc {
                 pFields = doc.getRecSum();
             }
         } catch (PDException ex) {
-            // Logger.getLogger(QueryProDoc.class.getName()).log(Level.SEVERE, null, ex);
             ex.printStackTrace();
+            throw ex;
         }
 
         return pFields;
@@ -818,94 +817,70 @@ public class QueryProDoc {
      * @param isFolder
      * @param docType
      * @return
+     * @throws PDException
      */
     private static Condition getCond(String strCampo, Integer valOper, String strValorCampo, DriverGeneric sesion,
-            boolean isFolder, String docType) {
+            boolean isFolder, String docType) throws PDException {
 
         Condition cond = null;
         int attrType = 0;
 
-        if (isFolder) {
-            try {
+        try {
+            if (isFolder) {
+
                 PDFolders fol = new PDFolders(sesion);
                 Attribute attr = fol.getRecordStructPDFolder().getAttr(strCampo);
                 attrType = attr.getType();
-            } catch (PDException e) {
-                e.printStackTrace();
-            }
-        } else {
 
-            try {
+            } else {
+
                 PDDocs doc = new PDDocs(sesion);
                 doc.setDocType(docType);
                 Attribute attr = doc.getRecordStruct().getAttr(strCampo);
                 attrType = attr.getType();
-            } catch (PDException e) {
-                e.printStackTrace();
             }
-        }
 
-        switch (attrType) {
-        case 0:
-            Integer sValor = Integer.parseInt(strValorCampo);
-            try {
+            switch (attrType) {
+            case 0:
+                Integer sValor = Integer.parseInt(strValorCampo);
                 cond = new Condition(strCampo, valOper, sValor);
-            } catch (PDException e) {
-                e.printStackTrace();
-            }
-            break;
-        case 1:
-            Float fValor = Float.parseFloat(strValorCampo);
-            try {
-                cond = new Condition(strCampo, valOper, fValor);
-            } catch (PDException e) {
-                e.printStackTrace();
-            }
-            break;
-        case 2:
-            // String strValor = strValorCampo.substring(1, strValorCampo.length() - 1); //
-            // Eliminamos las comillas
+                break;
 
-            try {
+            case 1:
+                Float fValor = Float.parseFloat(strValorCampo);
+                cond = new Condition(strCampo, valOper, fValor);
+                break;
+
+            case 2:
                 cond = new Condition(strCampo, valOper, strValorCampo);
-            } catch (PDException e) {
-                e.printStackTrace();
-            }
-            break;
-        case 3:
-            SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
-            try {
+                break;
+
+            case 3:
+                SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
                 Date dValor = formato.parse(strValorCampo);
                 cond = new Condition(strCampo, valOper, dValor);
-            } catch (PDException e) {
-                e.printStackTrace();
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            break;
-        case 4:
-            Boolean bValor = Boolean.parseBoolean(strValorCampo);
-            try {
-                cond = new Condition(strCampo, valOper, bValor);
-            } catch (PDException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            break;
-        case 5:
+                break;
 
-            try {
+            case 4:
+                Boolean bValor = Boolean.parseBoolean(strValorCampo);
+                cond = new Condition(strCampo, valOper, bValor);
+                break;
+
+            case 5:
                 String strAux = strValorCampo.substring(1, strValorCampo.length() - 1);
                 String strPatron = "yyyy-MM-dd HH:mm:ss";
                 Date date = convertStringToTimestamp(strAux, strPatron);
                 cond = new Condition(strCampo, valOper, date);
-            } catch (PDException e) {
-                e.printStackTrace();
-            }
-            break;
+                break;
 
-        default:
-            break;
+            default:
+                break;
+            }
+
+        } catch (PDException e) {
+            throw e;
+        } catch (ParseException e) {
+            throw new PDException(e.getMessage());
         }
 
         return cond;
@@ -916,8 +891,9 @@ public class QueryProDoc {
      * @param str_date
      * @param pattern
      * @return
+     * @throws PDException
      */
-    public static Date convertStringToTimestamp(String str_date, String pattern) {
+    public static Date convertStringToTimestamp(String str_date, String pattern) throws PDException {
         try {
 
             SimpleDateFormat formatter = new SimpleDateFormat(pattern);
@@ -925,8 +901,53 @@ public class QueryProDoc {
             return date;
 
         } catch (ParseException e) {
-            System.out.println("Exception :" + e);
-            return null;
+            throw new PDException(e.getMessage());
+        }
+    }
+
+    /**
+     * 
+     * @param sesion
+     * @param tipo
+     * @param objectId
+     * @return
+     * @throws PDException
+     */
+    public static Record getRecordObjectOPD(DriverGeneric sesion, String tipo, String objectId) throws PDException {
+
+        PDDocs objDoc = new PDDocs(sesion);
+        PDFolders objFolder = new PDFolders(sesion);
+        Record record = null;
+
+        try {
+
+            if (tipo.equalsIgnoreCase("document") || tipo.equalsIgnoreCase("PD_DOCS")) {
+                
+                record = objDoc.LoadFull(objectId);
+
+            } else if (tipo.equalsIgnoreCase("folder") || tipo.equalsIgnoreCase("PD_FOLDERS")) {
+
+                record = objFolder.LoadFull(objectId);
+
+            } else { // TODO: Probar que funciona correctamente esta parte
+                PDObjDefs od = new PDObjDefs(sesion);
+                od.Load(tipo);
+                String tipoObj = od.getClassType();
+                
+                if (tipoObj.equalsIgnoreCase("document")) {
+                    objDoc = new PDDocs(sesion, tipo);
+                    record = objDoc.LoadFull(objectId);
+                } else {
+
+                    objFolder = new PDFolders(sesion, tipo);
+                    record = objFolder.LoadFull(objectId);
+                }
+            }
+
+            return record;
+
+        } catch (PDException e) {
+            throw e;
         }
     }
 

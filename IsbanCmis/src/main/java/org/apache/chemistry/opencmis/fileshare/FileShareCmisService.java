@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.chemistry.opencmis.commons.data.Acl;
+import org.apache.chemistry.opencmis.commons.data.AclCapabilities;
 import org.apache.chemistry.opencmis.commons.data.AllowableActions;
 import org.apache.chemistry.opencmis.commons.data.BulkUpdateObjectIdAndChangeToken;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
@@ -51,6 +52,8 @@ import org.apache.chemistry.opencmis.commons.spi.Holder;
 import org.apache.chemistry.opencmis.prodoc.SesionProDoc;
 import org.apache.chemistry.opencmis.server.support.wrapper.CallContextAwareCmisService;
 
+import prodoc.PDException;
+
 /**
  * FileShare Service implementation.
  */
@@ -59,19 +62,18 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     private final FileShareRepositoryManager repositoryManager;
     private CallContext context;
     private SesionProDoc sesProdoc;
-  
 
     public SesionProDoc getProdoc() {
-		return sesProdoc;
-	}
+        return sesProdoc;
+    }
 
-	public void setProdoc(SesionProDoc sesProdoc) {
-		this.sesProdoc = sesProdoc;
-	}
+    public void setProdoc(SesionProDoc sesProdoc) {
+        this.sesProdoc = sesProdoc;
+    }
 
-	public FileShareCmisService(final FileShareRepositoryManager repositoryManager) {
+    public FileShareCmisService(final FileShareRepositoryManager repositoryManager) {
         this.repositoryManager = repositoryManager;
-        
+
     }
 
     // --- Call Context ---
@@ -150,7 +152,7 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
             Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
             Boolean includePathSegment, BigInteger maxItems, BigInteger skipCount, ExtensionsData extension) {
         return getRepository().getChildren(getCallContext(), folderId, filter, orderBy, includeAllowableActions,
-                includePathSegment, maxItems, skipCount, this);
+                includePathSegment, maxItems, skipCount, this, sesProdoc);
     }
 
     @Override
@@ -163,7 +165,12 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
 
     @Override
     public ObjectData getFolderParent(String repositoryId, String folderId, String filter, ExtensionsData extension) {
-        return getRepository().getFolderParent(getCallContext(), folderId, filter, this);
+        try {
+            return getRepository().getFolderParent(getCallContext(), folderId, filter, this, sesProdoc);
+        } catch (PDException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -210,12 +217,13 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     public String createDocument(String repositoryId, Properties properties, String folderId,
             ContentStream contentStream, VersioningState versioningState, List<String> policies, Acl addAces,
             Acl removeAces, ExtensionsData extension) {
-        return getRepository().createDocument(getCallContext(), properties, folderId, contentStream, versioningState,sesProdoc);
+        return getRepository().createDocument(getCallContext(), properties, folderId, contentStream, versioningState,
+                sesProdoc);
     }
 
     @Override
-    public String createDocumentFromSource(String repositoryId, String sourceId, Properties properties,
-            String folderId, VersioningState versioningState, List<String> policies, Acl addAces, Acl removeAces,
+    public String createDocumentFromSource(String repositoryId, String sourceId, Properties properties, String folderId,
+            VersioningState versioningState, List<String> policies, Acl addAces, Acl removeAces,
             ExtensionsData extension) {
         return getRepository().createDocumentFromSource(getCallContext(), sourceId, properties, folderId,
                 versioningState);
@@ -224,7 +232,7 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     @Override
     public String createFolder(String repositoryId, Properties properties, String folderId, List<String> policies,
             Acl addAces, Acl removeAces, ExtensionsData extension) {
-        return getRepository().createFolder(getCallContext(), properties, folderId,sesProdoc);
+        return getRepository().createFolder(getCallContext(), properties, folderId, sesProdoc);
     }
 
     @Override
@@ -247,15 +255,27 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     @Override
     public ContentStream getContentStream(String repositoryId, String objectId, String streamId, BigInteger offset,
             BigInteger length, ExtensionsData extension) {
-        return getRepository().getContentStream(getCallContext(), objectId, offset, length);
+        try {
+            return getRepository().getContentStream(getCallContext(), objectId, offset, length, sesProdoc);
+        } catch (PDException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
     public ObjectData getObject(String repositoryId, String objectId, String filter, Boolean includeAllowableActions,
             IncludeRelationships includeRelationships, String renditionFilter, Boolean includePolicyIds,
             Boolean includeAcl, ExtensionsData extension) {
-        return getRepository().getObject(getCallContext(), objectId, null, filter, includeAllowableActions, includeAcl,
-                this, sesProdoc);
+
+        try {
+            return getRepository().getObject(getCallContext(), objectId, null, filter, includeAllowableActions,
+                    includeAcl, this, sesProdoc);
+        } catch (PDException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     @Override
@@ -268,7 +288,14 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
 
     @Override
     public Properties getProperties(String repositoryId, String objectId, String filter, ExtensionsData extension) {
-        ObjectData object = getRepository().getObject(getCallContext(), objectId, null, filter, false, false, this, sesProdoc);
+
+        ObjectData object = null;
+        try {
+            object = getRepository().getObject(getCallContext(), objectId, null, filter, false, false, this, sesProdoc);
+        } catch (PDException e) {
+            e.printStackTrace();
+        }
+
         return object.getProperties();
     }
 
@@ -320,8 +347,14 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     @Override
     public List<ObjectData> getAllVersions(String repositoryId, String objectId, String versionSeriesId, String filter,
             Boolean includeAllowableActions, ExtensionsData extension) {
-        ObjectData theVersion = getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter,
-                includeAllowableActions, false, this, sesProdoc);
+
+        ObjectData theVersion = null;
+        try {
+            theVersion = getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter,
+                    includeAllowableActions, false, this, sesProdoc);
+        } catch (PDException e) {
+            e.printStackTrace();
+        }
 
         return Collections.singletonList(theVersion);
     }
@@ -330,15 +363,29 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     public ObjectData getObjectOfLatestVersion(String repositoryId, String objectId, String versionSeriesId,
             Boolean major, String filter, Boolean includeAllowableActions, IncludeRelationships includeRelationships,
             String renditionFilter, Boolean includePolicyIds, Boolean includeAcl, ExtensionsData extension) {
-        return getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter, includeAllowableActions,
-                includeAcl, this, sesProdoc);
+
+        try {
+            return getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter,
+                    includeAllowableActions, includeAcl, this, sesProdoc);
+        } catch (PDException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     @Override
     public Properties getPropertiesOfLatestVersion(String repositoryId, String objectId, String versionSeriesId,
             Boolean major, String filter, ExtensionsData extension) {
-        ObjectData object = getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter, false,
-                false, null, sesProdoc);
+
+        ObjectData object = null;
+        try {
+            object = getRepository().getObject(getCallContext(), objectId, versionSeriesId, filter, false, false, null,
+                    sesProdoc);
+        } catch (PDException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         return object.getProperties();
     }
@@ -349,15 +396,21 @@ public class FileShareCmisService extends AbstractCmisService implements CallCon
     public Acl getAcl(String repositoryId, String objectId, Boolean onlyBasicPermissions, ExtensionsData extension) {
         return getRepository().getAcl(getCallContext(), objectId);
     }
-    
-    //-- Query
-    
+
+    // -- Query
+
     @Override
     public ObjectList query(String repositoryId, String statement, Boolean searchAllVersions,
             Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
             BigInteger maxItems, BigInteger skipCount, ExtensionsData extension) {
-    	return getRepository().query( getCallContext(), repositoryId, statement, searchAllVersions, includeAllowableActions,
-                includeRelationships, renditionFilter, maxItems, skipCount, extension,sesProdoc);
-    	
+        try {
+            return getRepository().query(getCallContext(), repositoryId, statement, searchAllVersions,
+                    includeAllowableActions, includeRelationships, renditionFilter, maxItems, skipCount, extension,
+                    sesProdoc);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+
     }
 }

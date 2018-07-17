@@ -33,8 +33,7 @@ public class InsertProDoc {
      * @param parentId
      * @return Id de la carpeta creada
      */
-    public static String crearCarpeta(Properties properties, SesionProDoc sesion, String parentId, String objId) {  //TODO --> ELIMINAR objId al terminar las pruebas
-
+    public static String crearCarpeta(Properties properties, SesionProDoc sesion, String parentId) { 
         PDFolders folder = null;
 
         try {
@@ -48,8 +47,6 @@ public class InsertProDoc {
                 folder.setParentId(parentId);
             }
             
-            folder.setPDId(objId); // TODO --> ELIMINAR CUANDO SE TERMINEN LAS PRUEBAS
-
             folder.insert();
 
         } catch (PDException e) {

@@ -32,7 +32,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -40,7 +40,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
@@ -111,10 +110,13 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.AccessControlListI
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.AccessControlPrincipalDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.AclCapabilitiesDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.AllowableActionsImpl;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.BindingsObjectFactoryImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.BulkUpdateObjectIdAndChangeTokenImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.CreatablePropertyTypesImpl;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.DocumentTypeDefinitionImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.FailedToDeleteDataImpl;
+import org.apache.chemistry.opencmis.commons.impl.dataobjects.FolderTypeDefinitionImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.NewTypeSettableAttributesImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectDataImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ObjectInFolderContainerImpl;
@@ -138,9 +140,12 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.RepositoryInfoImpl
 import org.apache.chemistry.opencmis.commons.impl.server.ObjectInfoImpl;
 import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
+import org.apache.chemistry.opencmis.commons.spi.BindingsObjectFactory;
 import org.apache.chemistry.opencmis.commons.spi.Holder;
+import org.apache.chemistry.opencmis.isbanutil.FilterParser;
 import org.apache.chemistry.opencmis.isbanutil.QueryUtil;
 import org.apache.chemistry.opencmis.isbanutil.QueryValidator;
+import org.apache.chemistry.opencmis.isbanutil.XmlUtil;
 import org.apache.chemistry.opencmis.prodoc.InsertProDoc;
 import org.apache.chemistry.opencmis.prodoc.SesionProDoc;
 import org.apache.chemistry.opencmis.prodoc.UpdateProDoc;
@@ -155,10 +160,15 @@ import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
+import prodoc.Attribute;
+import prodoc.Cursor;
 import prodoc.ObjPD;
+import prodoc.PDACL;
 import prodoc.PDDocs;
 import prodoc.PDException;
 import prodoc.PDFolders;
+import prodoc.PDMimeType;
+import prodoc.PDObjDefs;
 import prodoc.Record;
 
 /**
@@ -166,9 +176,17 @@ import prodoc.Record;
  */
 public class FileShareRepository {
 
+    public static final int tINTEGER = 0;
+    public static final int tFLOAT = 1;
+    public static final int tSTRING = 2;
+    public static final int tDATE = 3;
+    public static final int tBOOLEAN = 4;
+    public static final int tTIMESTAMP = 5;
+    public static final int tTHES = 6;
+
     private static final Logger LOG = LoggerFactory.getLogger(FileShareRepository.class);
 
-    private static final String ROOT_ID = "@root@";
+    private static final String ROOT_ID = "RootFolder";
     private static final String SHADOW_EXT = ".cmis.xml";
     private static final String SHADOW_FOLDER = "cmis.xml";
 
@@ -177,21 +195,22 @@ public class FileShareRepository {
     private static final int BUFFER_SIZE = 64 * 1024;
 
     /** Repository id. */
-    private final String repositoryId;
+    private String repositoryId = null;
     /** Root directory. */
-    private final File root;
+    private File root = null;
     /** Types. */
-    private final FileShareTypeManager typeManager;
+    private FileShareTypeManager typeManager = null;
     /** Users. */
-    private final Map<String, Boolean> readWriteUserMap;
+    private Map<String, Boolean> readWriteUserMap = null;
 
     /** CMIS 1.0 repository info. */
-    private final RepositoryInfo repositoryInfo10;
+    private RepositoryInfo repositoryInfo10 = null;
     /** CMIS 1.1 repository info. */
-    private final RepositoryInfo repositoryInfo11;
+    private RepositoryInfo repositoryInfo11 = null;
 
     public FileShareRepository(final String repositoryId, final String rootPath,
             final FileShareTypeManager typeManager) {
+
         // check repository id
         if (repositoryId == null || repositoryId.trim().length() == 0) {
             throw new IllegalArgumentException("Invalid repository id!");
@@ -204,10 +223,7 @@ public class FileShareRepository {
             throw new IllegalArgumentException("Invalid root folder!");
         }
 
-        root = new File(rootPath);
-        if (!root.isDirectory()) {
-            throw new IllegalArgumentException("Root is not a directory!");
-        }
+        root = new File("");
 
         // set type manager objects
         this.typeManager = typeManager;
@@ -439,12 +455,14 @@ public class FileShareRepository {
      * @param extension
      * @param sesProdoc
      * @return
+     * @throws Exception
      * @throws JSQLParserException
      * @throws PDException
      */
     public ObjectList query(CallContext context, String repositoryId, String statement, Boolean searchAllVersions,
             Boolean includeAllowableActions, IncludeRelationships includeRelationships, String renditionFilter,
-            BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc) {
+            BigInteger maxItems, BigInteger skipCount, ExtensionsData extension, SesionProDoc sesProdoc)
+            throws Exception {
         CCJSqlParserManager managerSql = new CCJSqlParserManager();
         try {
             Vector<String> listaSalida = new Vector<>();
@@ -548,7 +566,7 @@ public class FileShareRepository {
             throw new CmisObjectNotFoundException("Cannot create object of type '" + typeId + "'!");
         }
 
-        return compileObjectData(context, getFile(objectId), null, false, false, userReadOnly, objectInfos, null);
+        return compileObjectData(context, getFile(objectId), null, false, false, userReadOnly, objectInfos);
     }
 
     /**
@@ -774,55 +792,8 @@ public class FileShareRepository {
      */
     public String createFolder(CallContext context, Properties properties, String folderId, SesionProDoc sesion) {
 
-        debug("createFolder");
-        checkUser(context, true);
+        String idFolderOPD = InsertProDoc.crearCarpeta(properties, sesion, folderId);
 
-        // check properties
-        if (properties == null || properties.getProperties() == null) {
-            throw new CmisInvalidArgumentException("Properties must be set!");
-        }
-
-        // check type
-        String typeId = FileShareUtils.getObjectTypeId(properties);
-        TypeDefinition type = typeManager.getInternalTypeDefinition(typeId);
-        if (type == null) {
-            throw new CmisObjectNotFoundException("Type '" + typeId + "' is unknown!");
-        }
-        if (type.getBaseTypeId() != BaseTypeId.CMIS_FOLDER) {
-            throw new CmisInvalidArgumentException("Type must be a folder type!");
-        }
-
-        // compile the properties
-        PropertiesImpl props = compileWriteProperties(typeId, context.getUsername(), context.getUsername(), properties);
-
-        // check the name
-        String name = FileShareUtils.getStringProperty(properties, PropertyIds.NAME);
-        if (!isValidName(name)) {
-            throw new CmisNameConstraintViolationException("Name is not valid.");
-        }
-
-        // get parent File
-        File parent = getFile(folderId);
-        if (!parent.isDirectory()) {
-            throw new CmisObjectNotFoundException("Parent is not a folder!");
-        }
-
-        // create the folder
-        File newFolder = new File(parent, name);
-        if (!newFolder.mkdir()) {
-            throw new CmisStorageException("Could not create folder!");
-        }
-
-        // set creation date
-        addPropertyDateTime(props, typeId, null, PropertyIds.CREATION_DATE,
-                FileShareUtils.millisToCalendar(newFolder.lastModified()));
-
-        // write properties
-        writePropertiesFile(newFolder, props);
-
-        String idFolderOPD = InsertProDoc.crearCarpeta(properties, sesion, folderId, getId(newFolder));
-
-        // return getId(newFolder);
         return idFolderOPD;
     }
 
@@ -867,7 +838,7 @@ public class FileShareRepository {
             }
         }
 
-        return compileObjectData(context, newFile, null, false, false, userReadOnly, objectInfos, null);
+        return compileObjectData(context, newFile, null, false, false, userReadOnly, objectInfos);
     }
 
     /**
@@ -1016,6 +987,7 @@ public class FileShareRepository {
 
         if (file.isDirectory()) {
             System.out.println("Modificar Carpeta");
+            // List<PropertyData<?>> propList = properties.getPropertyList();
 
             try {
                 UpdateProDoc.modificarCarpeta(properties, objId, sesion);
@@ -1088,7 +1060,7 @@ public class FileShareRepository {
             }
         }
 
-        return compileObjectData(context, newFile, null, false, false, userReadOnly, objectInfos, null);
+        return compileObjectData(context, newFile, null, false, false, userReadOnly, objectInfos);
     }
 
     /**
@@ -1194,35 +1166,93 @@ public class FileShareRepository {
 
     /**
      * CMIS getObject.
+     * 
+     * @param sesProdoc
+     * @throws PDException
      */
     public ObjectData getObject(CallContext context, String objectId, String versionServicesId, String filter,
-            Boolean includeAllowableActions, Boolean includeAcl, ObjectInfoHandler objectInfos, SesionProDoc sesion) {
-        debug("getObject");
-        boolean userReadOnly = checkUser(context, false);
+            Boolean includeAllowableActions, Boolean includeAcl, ObjectInfoHandler objectInfos, SesionProDoc sesProdoc)
+            throws PDException {
 
-        // check id
+        //// probando
+        // ArrayList <Object> typeDefs = XmlUtil.convertirXmlObjectType( context,
+        //// sesProdoc, "PruebaObjectType");
+        //
+        // if(typeDefs.get(0) instanceof FolderTypeDefinitionImpl) {
+        // FolderTypeDefinitionImpl typeDef = (FolderTypeDefinitionImpl)
+        //// typeDefs.get(0);
+        // this.typeManager.addTypeDefinition(typeDef);
+        // }else {
+        // DocumentTypeDefinitionImpl typeDef = (DocumentTypeDefinitionImpl)
+        //// typeDefs.get(0);
+        // this.typeManager.addTypeDefinition(typeDef);
+        // }
+
+        LOG.debug("start getObject()");
+
         if (objectId == null && versionServicesId == null) {
             throw new CmisInvalidArgumentException("Object Id must be set.");
         }
 
         if (objectId == null) {
-            // this works only because there are no versions in a file system
-            // and the object id and version series id are the same
             objectId = versionServicesId;
         }
 
-        // get the file or folder
-        File file = getFile(objectId);
+        PDFolders fold = null;
+        PDDocs doc = null;
 
-        // set defaults if values not set
-        boolean iaa = FileShareUtils.getBooleanParameter(includeAllowableActions, false);
-        boolean iacl = FileShareUtils.getBooleanParameter(includeAcl, false);
+        // Para tratamiento de ACL y AllowableActions
+        Record recObjOPD = null;
+        Boolean isFolder = false;
 
-        // split filter
-        Set<String> filterCollection = FileShareUtils.splitFilter(filter);
+        ObjectDataImpl objDataOut = null;
+        try {
+            fold = new PDFolders(sesProdoc.getMainSession());
+            fold.LoadFull(objectId);
+            if (fold.getParentId() != null) {
+                recObjOPD = fold.getRecSum();
+                isFolder = true;
+                objDataOut = compileOPDProp(context, sesProdoc, filter, fold);
 
-        // gather properties
-        return compileObjectData(context, file, filterCollection, iaa, iacl, userReadOnly, objectInfos, sesion);
+            } else {
+                doc = new PDDocs(sesProdoc.getMainSession());
+                doc.LoadFull(objectId);
+                if (doc.getParentId() != null) {
+                    recObjOPD = doc.getRecSum();
+                    objDataOut = compileOPDProp(context, sesProdoc, filter, doc);
+                }
+            }
+
+            boolean iaa = FileShareUtils.getBooleanParameter(includeAllowableActions, false);
+            boolean iacl = FileShareUtils.getBooleanParameter(includeAcl, false);
+            boolean userReadOnly = false;
+
+            // TODO Realizar tratamiento
+            if (iaa) {
+                // // result.setAllowableActions(compileAllowableActions(file, userReadOnly));
+                userReadOnly = checkUser(context, false);
+                objDataOut.setAllowableActions(compileAllowableActions(sesProdoc, recObjOPD, isFolder, userReadOnly));
+            }
+
+            if (iacl) {
+                // // result.setAcl(compileAcl(file));
+                // // result.setIsExactAcl(true);
+                // objDataOut.setAcl(compileAcl(recObjOPD, sesProdoc));
+                // objDataOut.setIsExactAcl(true);
+            }
+
+            // if (context.isObjectInfoRequired()) {
+            // objectInfo.setObject(result);
+            // objectInfos.addObjectInfo(objectInfo);
+            // }
+
+        } catch (PDException e) {
+            throw e;
+        }
+
+        LOG.debug("end getObject()");
+
+        return objDataOut;
     }
 
     /**
@@ -1258,54 +1288,107 @@ public class FileShareRepository {
 
     /**
      * CMIS getContentStream.
+     * 
+     * @throws PDException
      */
-    public ContentStream getContentStream(CallContext context, String objectId, BigInteger offset, BigInteger length) {
+    public ContentStream getContentStream(CallContext context, String objectId, BigInteger offset, BigInteger length,
+            SesionProDoc sesProdoc) throws PDException {
         debug("getContentStream");
         checkUser(context, false);
 
         // get the file
-        final File file = getFile(objectId);
-        if (!file.isFile()) {
-            throw new CmisStreamNotSupportedException("Not a file!");
-        }
-
-        if (file.length() == 0) {
-            throw new CmisConstraintException("Document has no content!");
-        }
-
-        InputStream stream = null;
         try {
-            stream = new BufferedInputStream(new FileInputStream(file), 64 * 1024);
-            if (offset != null || length != null) {
-                stream = new ContentRangeInputStream(stream, offset, length);
+            PDDocs objDoc = new PDDocs(sesProdoc.getMainSession());
+            Record recObjDoc = objDoc.LoadFull(objectId);
+
+            PDObjDefs objDef = new PDObjDefs(sesProdoc.getMainSession());
+            Record recObjDef = objDef.Load(recObjDoc.getAttr("DocType").getValue().toString());
+            String valorAttr = recObjDef.getAttr("Parent").getValue().toString();
+
+            if (!valorAttr.equals("PD_DOCS")) {
+                throw new CmisStreamNotSupportedException("Not a file!");
             }
-        } catch (FileNotFoundException e) {
-            throw new CmisObjectNotFoundException(e.getMessage(), e);
+
+            // // TODO Obtener el tamaño del documento para saber si tiene contenido
+            // if (file.length() == 0) {
+            // throw new CmisConstraintException("Document has no content!");
+            // }
+
+            // Tenemos que obtener el Stream
+            // InputStream stream = null;
+            // try {
+            // stream = new BufferedInputStream(new
+            // FileInputStream(recObjDoc.getAttr("Name").getValue().toString()),
+            // 64 * 1024);
+            // if (offset != null || length != null) {
+            // stream = new ContentRangeInputStream(stream, offset, length);
+            // }
+            // } catch (FileNotFoundException e) {
+            // throw new CmisObjectNotFoundException(e.getMessage(), e);
+            // }
+
+            String nombreDoc = recObjDoc.getAttr("Name").getValue().toString();
+            // String mimeType = recObjDoc.getAttr("MimeType").getValue().toString();
+
+            File destino = new File("C:\\pruebas\\API_disruptiva\\" + nombreDoc);
+
+            OutputStream out;
+            try {
+                out = new FileOutputStream(destino);
+                objDoc.getStream(out);
+            } catch (FileNotFoundException ex) {
+                throw new PDException(ex.getMessage());
+            }
+
+            // Tenemos que obtener el Stream
+            InputStream stream = null;
+            try {
+                stream = new BufferedInputStream(new FileInputStream(destino), 64 * 1024);
+                if (offset != null || length != null) {
+                    stream = new ContentRangeInputStream(stream, offset, length);
+                }
+            } catch (FileNotFoundException e) {
+                throw new CmisObjectNotFoundException(e.getMessage(), e);
+            }
+
+            // compile data
+            ContentStreamImpl result;
+            if ((offset != null && offset.longValue() > 0) || length != null) {
+                result = new PartialContentStreamImpl();
+            } else {
+                result = new ContentStreamImpl();
+            }
+
+            result.setFileName(recObjDoc.getAttr("Name").getValue().toString());
+
+            // TODO Obtener el tamaño del documento
+            // result.setLength(BigInteger.valueOf(file.length()));
+
+            // Ejemplo InsertProDoc
+            // // PDMimeType mimetype = new PDMimeType(sesion.getMainSession());
+            // // String mimeOPD = mimetype.SolveName(contentStream.getFileName());
+
+            PDMimeType mimetype = new PDMimeType(sesProdoc.getMainSession());
+            String mimeDoc = mimetype.SolveName(recObjDoc.getAttr("Name").getValue().toString());
+
+            result.setMimeType(mimeDoc);
+            result.setStream(stream);
+
+            return result;
+
+        } catch (PDException e1) {
+            throw e1;
         }
 
-        // compile data
-        ContentStreamImpl result;
-        if ((offset != null && offset.longValue() > 0) || length != null) {
-            result = new PartialContentStreamImpl();
-        } else {
-            result = new ContentStreamImpl();
-        }
-
-        result.setFileName(file.getName());
-        result.setLength(BigInteger.valueOf(file.length()));
-        result.setMimeType(MimeTypes.getMIMEType(file));
-        result.setStream(stream);
-
-        return result;
     }
 
     /**
      * CMIS getChildren.
      */
+    @SuppressWarnings("unused")
     public ObjectInFolderList getChildren(CallContext context, String folderId, String filter, String orderBy,
             Boolean includeAllowableActions, Boolean includePathSegment, BigInteger maxItems, BigInteger skipCount,
-            ObjectInfoHandler objectInfos) {
-        debug("getChildren");
+            ObjectInfoHandler objectInfos, SesionProDoc sesProdoc) {
         boolean userReadOnly = checkUser(context, false);
 
         // split filter
@@ -1325,138 +1408,917 @@ public class FileShareRepository {
         if (max < 0) {
             max = Integer.MAX_VALUE;
         }
-
-        // get the folder
-        File folder = getFile(folderId);
-        if (!folder.isDirectory()) {
-            throw new CmisObjectNotFoundException("Not a folder!");
-        }
-
-        // get the children
-        List<File> children = new ArrayList<File>();
-        for (File child : folder.listFiles()) {
-            // skip hidden and shadow files
-            if (child.isHidden() || child.getName().equals(SHADOW_FOLDER) || child.getPath().endsWith(SHADOW_EXT)) {
-                continue;
-            }
-
-            children.add(child);
-        }
-
-        // very basic sorting
-        if (orderBy != null) {
-            boolean desc = false;
-            String queryName = orderBy;
-
-            int commaIdx = orderBy.indexOf(',');
-            if (commaIdx > -1) {
-                queryName = orderBy.substring(0, commaIdx);
-            }
-
-            queryName = queryName.trim();
-            if (queryName.toLowerCase(Locale.ENGLISH).endsWith(" desc")) {
-                desc = true;
-                queryName = queryName.substring(0, queryName.length() - 5).trim();
-            }
-
-            Comparator<File> comparator = null;
-
-            if ("cmis:name".equals(queryName)) {
-                comparator = new Comparator<File>() {
-                    @Override
-                    public int compare(File f1, File f2) {
-                        return f1.getName().toLowerCase(Locale.ENGLISH)
-                                .compareTo(f2.getName().toLowerCase(Locale.ENGLISH));
-                    }
-                };
-            } else if ("cmis:creationDate".equals(queryName) || "cmis:lastModificationDate".equals(queryName)) {
-                comparator = new Comparator<File>() {
-                    @Override
-                    public int compare(File f1, File f2) {
-                        return Long.compare(f1.lastModified(), f2.lastModified());
-                    }
-                };
-            } else if ("cmis:contentStreamLength".equals(queryName)) {
-                comparator = new Comparator<File>() {
-                    @Override
-                    public int compare(File f1, File f2) {
-                        return Long.compare(f1.length(), f2.length());
-                    }
-                };
-            } else if ("cmis:objectId".equals(queryName)) {
-                comparator = new Comparator<File>() {
-                    @Override
-                    public int compare(File f1, File f2) {
-                        try {
-                            return fileToId(f1).compareTo(fileToId(f2));
-                        } catch (IOException e) {
-                            return 0;
-                        }
-                    }
-                };
-            } else if ("cmis:baseTypeId".equals(queryName)) {
-                comparator = new Comparator<File>() {
-                    @Override
-                    public int compare(File f1, File f2) {
-                        if (f1.isDirectory() == f2.isDirectory()) {
-                            return 0;
-                        }
-                        return f1.isDirectory() ? -1 : 1;
-                    }
-                };
-            } else if ("cmis:createdBy".equals(queryName) || "cmis:lastModifiedBy".equals(queryName)) {
-                // do nothing
-            } else {
-                throw new CmisInvalidArgumentException("Cannot sort by " + queryName + ".");
-            }
-
-            if (comparator != null) {
-                Collections.sort(children, comparator);
-                if (desc) {
-                    Collections.reverse(children);
-                }
-            }
-        }
-
-        // set object info of the the folder
-        if (context.isObjectInfoRequired()) {
-            compileObjectData(context, folder, null, false, false, userReadOnly, objectInfos, null);
-        }
+        //
+        // // get the folder
+        // File folder = new File("C:\\pruebaCMIS\\CmisFolderRoot");
+        //
+        // if (!folder.isDirectory()) {
+        // throw new CmisObjectNotFoundException("Not a folder!");
+        // }
+        //
+        // // get the children
+        // List<File> children = new ArrayList<File>();
+        // for (File child : folder.listFiles()) {
+        // // skip hidden and shadow files
+        // if (child.isHidden() || child.getName().equals(SHADOW_FOLDER) ||
+        // child.getPath().endsWith(SHADOW_EXT)) {
+        // continue;
+        // }
+        //
+        // children.add(child);
+        // }
+        //
+        // // very basic sorting
+        // if (orderBy != null) {
+        // boolean desc = false;
+        // String queryName = orderBy;
+        //
+        // int commaIdx = orderBy.indexOf(',');
+        // if (commaIdx > -1) {
+        // queryName = orderBy.substring(0, commaIdx);
+        // }
+        //
+        // queryName = queryName.trim();
+        // if (queryName.toLowerCase(Locale.ENGLISH).endsWith(" desc")) {
+        // desc = true;
+        // queryName = queryName.substring(0, queryName.length() - 5).trim();
+        // }
+        //
+        // Comparator<File> comparator = null;
+        //
+        // if ("cmis:name".equals(queryName)) {
+        // comparator = new Comparator<File>() {
+        // @Override
+        // public int compare(File f1, File f2) {
+        // return f1.getName().toLowerCase(Locale.ENGLISH)
+        // .compareTo(f2.getName().toLowerCase(Locale.ENGLISH));
+        // }
+        // };
+        // } else if ("cmis:creationDate".equals(queryName) ||
+        // "cmis:lastModificationDate".equals(queryName)) {
+        // comparator = new Comparator<File>() {
+        // @Override
+        // public int compare(File f1, File f2) {
+        // return Long.compare(f1.lastModified(), f2.lastModified());
+        // }
+        // };
+        // } else if ("cmis:contentStreamLength".equals(queryName)) {
+        // comparator = new Comparator<File>() {
+        // @Override
+        // public int compare(File f1, File f2) {
+        // return Long.compare(f1.length(), f2.length());
+        // }
+        // };
+        // } else if ("cmis:objectId".equals(queryName)) {
+        // comparator = new Comparator<File>() {
+        // @Override
+        // public int compare(File f1, File f2) {
+        // try {
+        // return fileToId(f1).compareTo(fileToId(f2));
+        // } catch (IOException e) {
+        // return 0;
+        // }
+        // }
+        // };
+        // } else if ("cmis:baseTypeId".equals(queryName)) {
+        // comparator = new Comparator<File>() {
+        // @Override
+        // public int compare(File f1, File f2) {
+        // if (f1.isDirectory() == f2.isDirectory()) {
+        // return 0;
+        // }
+        // return f1.isDirectory() ? -1 : 1;
+        // }
+        // };
+        // } else if ("cmis:createdBy".equals(queryName) ||
+        // "cmis:lastModifiedBy".equals(queryName)) {
+        // // do nothing
+        // } else {
+        // throw new CmisInvalidArgumentException("Cannot sort by " + queryName + ".");
+        // }
+        //
+        // if (comparator != null) {
+        // Collections.sort(children, comparator);
+        // if (desc) {
+        // Collections.reverse(children);
+        // }
+        // }
+        // }
+        //
+        // // set object info of the the folder
+        // if (context.isObjectInfoRequired()) {
+        // compileObjectData(context, folder, null, false, false, userReadOnly,
+        // objectInfos);
+        // }
 
         // prepare result
         ObjectInFolderListImpl result = new ObjectInFolderListImpl();
         result.setObjects(new ArrayList<ObjectInFolderData>());
         result.setHasMoreItems(false);
         int count = 0;
+        PDFolders fold = null;
+        PDDocs doc = null;
+        try {
+            fold = new PDFolders(sesProdoc.getMainSession());
+            fold.LoadFull(folderId);
+            String tipo = null;
+            // TODO Comprobar si hay que coger el Type del padre o el propio del objeto OPD
+            if (fold.getPDId() != null) {
+                // tipo = fold.getFolderType();
+                String parentId = fold.getParentId();
+                PDFolders foldParent = new PDFolders(sesProdoc.getMainSession());
+                foldParent.LoadFull(parentId);
+                tipo = foldParent.getFolderType();
 
-        // iterate through children
-        for (File child : children) {
-            count++;
-
-            if (skip > 0) {
-                skip--;
-                continue;
+            } else {
+                doc = new PDDocs(sesProdoc.getMainSession());
+                doc.LoadFull(folderId);
+                if (doc.getPDId() != null) {
+                    // tipo = doc.getDocType();
+                    String parentId = doc.getParentId();
+                    PDDocs docParent = new PDDocs(sesProdoc.getMainSession());
+                    docParent.LoadFull(parentId);
+                    tipo = docParent.getDocType();
+                }
             }
 
-            if (result.getObjects().size() >= max) {
-                result.setHasMoreItems(true);
-                continue;
+            PDObjDefs od = new PDObjDefs(sesProdoc.getMainSession());
+            od.Load(tipo);
+            String tipoObj = od.getClassType();
+
+            List<PDFolders> listaC = new ArrayList<>();
+
+            // Si el objeto es una carpeta --> Obtenemos los descendientes
+            if (tipoObj.toLowerCase().equals("folder")) {
+
+                PDFolders folder = new PDFolders(sesProdoc.getMainSession());
+                HashSet x = folder.getListDirectDescendList(folderId);
+
+                for (Object id : x) {
+
+                    PDFolders child = new PDFolders(sesProdoc.getMainSession());
+                    child.Load(id.toString());
+
+                    // TODO : ver tratamiento para todo tipo de carpetas EJ "ExampleFolder"
+                    if (!child.getParentId().equals(child.getPDId())) {
+                        // if (!child.getParentId().equals(child.getPDId()) &&
+                        // child.getFolderType().equals("PD_FOLDERS")) {
+
+                        listaC.add(child);
+                    }
+                }
+
+                for (PDFolders child : listaC) {
+                    count++;
+
+                    if (skip > 0) {
+                        skip--;
+                        continue;
+                    }
+
+                    if (result.getObjects().size() >= max) {
+                        result.setHasMoreItems(true);
+                        continue;
+                    }
+
+                    // build and add child object
+                    ObjectInFolderDataImpl objectInFolder = new ObjectInFolderDataImpl();
+                    objectInFolder.setObject(compileOPDProp(context, sesProdoc, filter, child));
+                    if (ips) {
+                        objectInFolder.setPathSegment(child.getPDId());
+                    }
+
+                    result.getObjects().add(objectInFolder);
+                }
+
+                List<PDDocs> listaD = new ArrayList<>();
+
+                PDDocs docAux = new PDDocs(sesProdoc.getMainSession());
+                Cursor cursorDoc = docAux.getListContainedDocs(folderId);
+
+                Record rec = docAux.getDrv().NextRec(cursorDoc);
+
+                while (rec != null) {
+
+                    String id = rec.getAttr("PDId").getValue().toString();
+                    PDDocs docChild = new PDDocs(sesProdoc.getMainSession());
+                    docChild.Load(id);
+
+                    listaD.add(docChild);
+
+                    rec = docAux.getDrv().NextRec(cursorDoc);
+                }
+
+                for (PDDocs childDoc : listaD) {
+                    count++;
+
+                    if (skip > 0) {
+                        skip--;
+                        continue;
+                    }
+
+                    if (result.getObjects().size() >= max) {
+                        result.setHasMoreItems(true);
+                        continue;
+                    }
+
+                    // build and add child object
+                    ObjectInFolderDataImpl objectInFolder = new ObjectInFolderDataImpl();
+                    objectInFolder.setObject(compileOPDProp(context, sesProdoc, filter, childDoc));
+                    if (ips) {
+                        objectInFolder.setPathSegment(childDoc.getPDId());
+                    }
+
+                    result.getObjects().add(objectInFolder);
+                }
+
+                result.setNumItems(BigInteger.valueOf(count));
             }
 
-            // build and add child object
-            ObjectInFolderDataImpl objectInFolder = new ObjectInFolderDataImpl();
-            objectInFolder.setObject(
-                    compileObjectData(context, child, filterCollection, iaa, false, userReadOnly, objectInfos, null));
-            if (ips) {
-                objectInFolder.setPathSegment(child.getName());
-            }
-
-            result.getObjects().add(objectInFolder);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        result.setNumItems(BigInteger.valueOf(count));
-
         return result;
+    }
+
+    private ObjectDataImpl compileOPDProp(CallContext context, SesionProDoc sesProdoc, String filter, ObjPD child)
+            throws PDException {
+
+        ObjectDataImpl objDataOut = new ObjectDataImpl();
+        Record recOPD = null;
+
+        try {
+
+            String tipo;
+            if (child instanceof PDFolders) {
+                PDFolders fold = new PDFolders(sesProdoc.getMainSession());
+                fold.LoadFull(((PDFolders) child).getPDId().toString());
+                recOPD = fold.getRecSum();
+
+                String folderType = recOPD.getAttr("FolderType").getValue().toString();
+                if (existObjType(folderType) && !folderType.equals("PD_FOLDERS")) {
+                    ArrayList<Object> typeDefs = XmlUtil.convertirXmlObjectType(context, sesProdoc,
+                            recOPD.getAttr("FolderType").getValue().toString());
+                    FolderTypeDefinitionImpl typeDef = (FolderTypeDefinitionImpl) typeDefs.get(0);
+                    this.typeManager.addTypeDefinition(typeDef);
+                }
+
+                tipo = "PD_FOLDERS";
+            } else {
+                PDDocs doc = new PDDocs(sesProdoc.getMainSession());
+                doc.LoadFull(((PDDocs) child).getPDId().toString());
+                recOPD = doc.getRecSum();
+
+                // probando
+                String docType = recOPD.getAttr("DocType").getValue().toString();
+                if (!existObjType(docType) && !docType.equals("PD_DOCS")) {
+                    ArrayList<Object> typeDefs = XmlUtil.convertirXmlObjectType(context, sesProdoc,
+                            recOPD.getAttr("DocType").getValue().toString());
+                    DocumentTypeDefinitionImpl typeDef = (DocumentTypeDefinitionImpl) typeDefs.get(0);
+                    this.typeManager.addTypeDefinition(typeDef);
+                }
+
+                tipo = "PD_DOCS";
+            }
+
+            BindingsObjectFactory objectFactory = new BindingsObjectFactoryImpl();
+            Map<String, PropertyData<?>> properties = new HashMap<String, PropertyData<?>>();
+            List<String> requestedIds = FilterParser.getRequestedIdsFromFilter(filter);
+
+            recOPD.initList();
+            Attribute attr = recOPD.nextAttr();
+
+            while (attr != null) {
+
+                String nombreAttr = attr.getName().toString();
+                String valorAttr = null;
+
+                if (attr.getValue() != null) {
+                    valorAttr = attr.getValue().toString();
+                } else {
+                    valorAttr = "";
+                }
+
+                switch (nombreAttr) {
+
+                case "ACL":
+                    // TODO Tratamiento ACL
+                    break;
+
+                case "FolderType":
+
+                    if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID, requestedIds)) {
+                        properties.put(PropertyIds.OBJECT_TYPE_ID,
+                                objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID, "cmis:folder"));
+                    }
+
+                    // // TODO Realizar este tratamiento cuando tengamos los typeDefs de OPD
+
+                    // PDObjDefs Def = new PDObjDefs(sesProdoc.getMainSession());
+                    // Def.Load(valorAttr);
+                    //
+                    // if (Def.getParent().toString().equals("PD_FOLDERS")) {
+                    // valorAttr = "cmis:folder";
+                    // }
+                    //
+                    // if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID,
+                    // requestedIds)) {
+                    // properties.put(PropertyIds.OBJECT_TYPE_ID,
+                    // objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID, valorAttr));
+                    // }
+                    break;
+
+                case "PDAutor":
+
+                    // cmis:createdBy
+                    if (FilterParser.isContainedInFilter(PropertyIds.CREATED_BY, requestedIds)) {
+                        properties.put(PropertyIds.CREATED_BY,
+                                objectFactory.createPropertyStringData(PropertyIds.CREATED_BY, valorAttr));
+                    }
+
+                    // cmis:lastModifiedBy
+                    if (FilterParser.isContainedInFilter(PropertyIds.LAST_MODIFIED_BY, requestedIds)) {
+                        properties.put(PropertyIds.LAST_MODIFIED_BY,
+                                objectFactory.createPropertyStringData(PropertyIds.LAST_MODIFIED_BY, valorAttr));
+                    }
+
+                    break;
+
+                case "PDDate":
+
+                    if (tipo.equalsIgnoreCase("PD_FOLDERS")) {
+                        GregorianCalendar cal = new GregorianCalendar();
+                        cal.setTime((Date) attr.getValue());
+
+                        // cmis:creationDate
+                        if (FilterParser.isContainedInFilter(PropertyIds.CREATION_DATE, requestedIds)) {
+                            properties.put(PropertyIds.CREATION_DATE,
+                                    objectFactory.createPropertyDateTimeData(PropertyIds.CREATION_DATE, cal));
+                        }
+
+                        // cmis:lastModificationDate
+                        if (FilterParser.isContainedInFilter(PropertyIds.LAST_MODIFICATION_DATE, requestedIds)) {
+                            properties.put(PropertyIds.LAST_MODIFICATION_DATE,
+                                    objectFactory.createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
+                        }
+                    }
+                    break;
+
+                case "PDId":
+
+                    if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_ID, requestedIds)) {
+                        properties.put(PropertyIds.OBJECT_ID,
+                                objectFactory.createPropertyIdData(PropertyIds.OBJECT_ID, valorAttr));
+
+                        // TODO Comprobar si hay que cambiar el valor de RootFolder a @root@
+
+                        // if(valorAttr.equals("RootFolder")) {
+                        // properties.put(PropertyIds.OBJECT_ID,
+                        // objectFactory.createPropertyIdData(PropertyIds.OBJECT_ID, "@root@"));
+                        // }else {
+                        // properties.put(PropertyIds.OBJECT_ID,
+                        // objectFactory.createPropertyIdData(PropertyIds.OBJECT_ID, valorAttr));
+                        // }
+                    }
+
+                    break;
+
+                case "ParentId":
+
+                    if (tipo.equalsIgnoreCase("PD_FOLDERS")) {
+
+                        // cmis:parentId
+                        if (FilterParser.isContainedInFilter(PropertyIds.PARENT_ID, requestedIds)) {
+                            properties.put(PropertyIds.PARENT_ID, objectFactory.createPropertyIdData(
+                                    PropertyIds.PARENT_ID, recOPD.getAttr("ParentId").getValue().toString()));
+                        }
+                    }
+
+                    break;
+
+                case "Title":
+
+                    // cmis:name
+                    if (FilterParser.isContainedInFilter(PropertyIds.NAME, requestedIds)) {
+                        properties.put(PropertyIds.NAME,
+                                objectFactory.createPropertyStringData(PropertyIds.NAME, valorAttr));
+                    }
+
+                    break;
+
+                // Propiedades de los documentos
+
+                case "DocDate":
+
+                    GregorianCalendar cal = new GregorianCalendar();
+                    cal.setTime((Date) attr.getValue());
+
+                    // cmis:creationDate
+                    if (FilterParser.isContainedInFilter(PropertyIds.CREATION_DATE, requestedIds)) {
+                        properties.put(PropertyIds.CREATION_DATE,
+                                objectFactory.createPropertyDateTimeData(PropertyIds.CREATION_DATE, cal));
+                    }
+
+                    // cmis:lastModificationDate
+                    if (FilterParser.isContainedInFilter(PropertyIds.LAST_MODIFICATION_DATE, requestedIds)) {
+                        properties.put(PropertyIds.LAST_MODIFICATION_DATE,
+                                objectFactory.createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
+                    }
+
+                    break;
+
+                case "DocType":
+
+                    if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID, requestedIds)) {
+
+                        // TODO Comprobar este tratamiento cuando tengamos los typeDefs de OPD
+
+                        valorAttr = recOPD.getAttr("DocType").getValue().toString();
+                        if (valorAttr.equals("PD_DOCS")) {
+                            valorAttr = "cmis:document";
+                        }
+
+                        properties.put(PropertyIds.OBJECT_TYPE_ID,
+                                objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID, valorAttr));
+                    }
+
+                    break;
+
+                case "LockedBy":
+                    break;
+
+                case "MimeType":
+
+                    // PDMimeType mime = new PDMimeType(sesProdoc.getMainSession());
+                    // valorMime = mime.SolveExt(valorAttr);
+                    properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE,
+                            objectFactory.createPropertyStringData(PropertyIds.CONTENT_STREAM_MIME_TYPE, valorAttr));
+                    break;
+
+                case "Name":
+
+                    properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME,
+                            objectFactory.createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME, valorAttr));
+                    break;
+
+                case "PurgeDate":
+                    break;
+
+                case "Reposit":
+                    break;
+
+                case "Status":
+                    break;
+
+                case "Version":
+
+                    // cmis:versionLabel
+                    if (FilterParser.isContainedInFilter(PropertyIds.VERSION_LABEL, requestedIds)) {
+                        // attrAux = recOPD.getAttr("Version");
+                        // valorAttr = attrAux.getValue().toString();
+                        properties.put(PropertyIds.VERSION_LABEL,
+                                objectFactory.createPropertyStringData(PropertyIds.VERSION_LABEL, valorAttr));
+                    }
+                    break;
+
+                case "Note":
+
+                    if (FilterParser.isContainedInFilter(PropertyIds.DESCRIPTION, requestedIds)) {
+                        properties.put(PropertyIds.DESCRIPTION,
+                                objectFactory.createPropertyStringData(PropertyIds.DESCRIPTION, valorAttr));
+                    }
+                    break;
+
+                // Resto de atributos
+                default:
+
+                    // TODO Comprobar tratamiento para el resto de atributos que no sean los básicos
+
+                    if (!tipo.equalsIgnoreCase("PD_FOLDERS")) {
+                        createOtherProperty(properties, recOPD, nombreAttr);
+                    }
+                    break;
+                }
+
+                attr = recOPD.nextAttr();
+            }
+
+            Attribute attrAux = null;
+            String valorAttr = null;
+
+            if (tipo.equalsIgnoreCase("PD_FOLDERS")) {
+
+                // cmis:baseTypeId
+                if (FilterParser.isContainedInFilter(PropertyIds.BASE_TYPE_ID, requestedIds)) {
+                    properties.put(PropertyIds.BASE_TYPE_ID,
+                            objectFactory.createPropertyStringData(PropertyIds.BASE_TYPE_ID, "cmis:folder"));
+
+                    // TODO Realizar este tratamiento cuando tengamos los typeDefs de OPD
+                    // String idObj = recOPD.getAttr("PDId").getValue().toString();
+                    // PDFolders obj = new PDFolders(sesProdoc.getMainSession());
+                    // Record recObj = obj.Load(idObj);
+                    // String parentId = recObj.getAttr("parentId").getValue().toString();
+                    // Record recObjParent = obj.Load(parentId);
+                    // valorAttr = recObjParent.getAttr("FolderType").getValue().toString();
+                    //
+                    // if (valorAttr.equals("PD_FOLDERS")) {
+                    // valorAttr = "cmis:folder";
+                    // }
+                    //
+                    // properties.put(PropertyIds.BASE_TYPE_ID,
+                    // objectFactory.createPropertyStringData(PropertyIds.BASE_TYPE_ID, valorAttr));
+                }
+
+                // TODO Como tratamos este campo ??
+                // // CMIS 1.1 properties
+                // if (context.getCmisVersion() != CmisVersion.CMIS_1_0) {
+                //
+                // if (FilterParser.isContainedInFilter(PropertyIds.SECONDARY_OBJECT_TYPE_IDS,
+                // requestedIds)) {
+                // properties.put(PropertyIds.SECONDARY_OBJECT_TYPE_IDS,
+                // objectFactory.createPropertyIdData(PropertyIds.SECONDARY_OBJECT_TYPE_IDS,
+                // ""));
+                // }
+                // }
+
+                // cmis:path
+                if (FilterParser.isContainedInFilter(PropertyIds.PATH, requestedIds)) {
+
+                    String path = null;
+                    if (recOPD.getAttr("PDId").getValue().toString().equals("RootFolder")) {
+                        path = "/";
+                    } else {
+                        path = ((PDFolders) child).getPathId(recOPD.getAttr("PDId").getValue().toString());
+                    }
+
+                    properties.put(PropertyIds.PATH, objectFactory.createPropertyStringData(PropertyIds.PATH, path));
+
+                }
+
+                // cmis:allowedChildObjectTypeIds
+                if (FilterParser.isContainedInFilter(PropertyIds.ALLOWED_CHILD_OBJECT_TYPE_IDS, requestedIds)) {
+                    properties.put(PropertyIds.ALLOWED_CHILD_OBJECT_TYPE_IDS, objectFactory
+                            .createPropertyStringData(PropertyIds.ALLOWED_CHILD_OBJECT_TYPE_IDS, "not set"));
+                }
+
+            } else {
+
+                if (tipo.equalsIgnoreCase("PD_DOCS")) {
+
+                    String usuSesion = child.getDrv().getUser().getName();
+
+                    // cmis:baseTypeId
+                    if (FilterParser.isContainedInFilter(PropertyIds.BASE_TYPE_ID, requestedIds)) {
+
+                        // properties.put(PropertyIds.BASE_TYPE_ID,
+                        // objectFactory.createPropertyStringData(PropertyIds.BASE_TYPE_ID,
+                        // "cmis:document"));
+
+                        // // TODO Comprobar este tratamiento cuando tengamos los typeDefs de OPD
+                        PDObjDefs objDef = new PDObjDefs(sesProdoc.getMainSession());
+                        Record recObjDef = objDef.Load(recOPD.getAttr("DocType").getValue().toString());
+                        valorAttr = recObjDef.getAttr("Parent").getValue().toString();
+
+                        if (valorAttr.equals("PD_DOCS")) {
+                            valorAttr = "cmis:document";
+                        }
+
+                        properties.put(PropertyIds.BASE_TYPE_ID,
+                                objectFactory.createPropertyStringData(PropertyIds.BASE_TYPE_ID, valorAttr));
+                    }
+
+                    // cmis:isImmutable
+                    if (FilterParser.isContainedInFilter(PropertyIds.IS_IMMUTABLE, requestedIds)) {
+                        properties.put(PropertyIds.IS_IMMUTABLE,
+                                objectFactory.createPropertyBooleanData(PropertyIds.IS_IMMUTABLE, true));
+                    }
+
+                    // cmis:isLatestVersion
+                    if (FilterParser.isContainedInFilter(PropertyIds.IS_LATEST_VERSION, requestedIds)) {
+                        properties.put(PropertyIds.IS_LATEST_VERSION,
+                                objectFactory.createPropertyBooleanData(PropertyIds.IS_LATEST_VERSION, true));
+                    }
+
+                    // cmis:isMajorVersion
+                    if (FilterParser.isContainedInFilter(PropertyIds.IS_MAJOR_VERSION, requestedIds)) {
+                        properties.put(PropertyIds.IS_MAJOR_VERSION,
+                                objectFactory.createPropertyBooleanData(PropertyIds.IS_MAJOR_VERSION, true));
+                    }
+
+                    // cmis:isLatestMajorVersion
+                    if (FilterParser.isContainedInFilter(PropertyIds.IS_LATEST_MAJOR_VERSION, requestedIds)) {
+                        properties.put(PropertyIds.IS_LATEST_MAJOR_VERSION,
+                                objectFactory.createPropertyBooleanData(PropertyIds.IS_LATEST_MAJOR_VERSION, true));
+                    }
+
+                    // cmis:versionSeriesId
+                    if (FilterParser.isContainedInFilter(PropertyIds.VERSION_SERIES_ID, requestedIds)) {
+                        properties.put(PropertyIds.VERSION_SERIES_ID, objectFactory.createPropertyIdData(
+                                PropertyIds.VERSION_SERIES_ID, recOPD.getAttr("PDId").getValue().toString()));
+                    }
+
+                    // cmis:isVersionSeriesCheckedOut
+                    if (FilterParser.isContainedInFilter(PropertyIds.IS_VERSION_SERIES_CHECKED_OUT, requestedIds)) {
+                        attrAux = recOPD.getAttr("LockedBy");
+                        if (attrAux.getValue() != null) {
+                            properties.put(PropertyIds.IS_VERSION_SERIES_CHECKED_OUT, objectFactory
+                                    .createPropertyBooleanData(PropertyIds.IS_VERSION_SERIES_CHECKED_OUT, true));
+                        } else {
+                            properties.put(PropertyIds.IS_VERSION_SERIES_CHECKED_OUT, objectFactory
+                                    .createPropertyBooleanData(PropertyIds.IS_VERSION_SERIES_CHECKED_OUT, false));
+                        }
+                    }
+
+                    // cmis:versionSeriesCheckedOutBy
+                    if (FilterParser.isContainedInFilter(PropertyIds.VERSION_SERIES_CHECKED_OUT_BY, requestedIds)) {
+                        attrAux = recOPD.getAttr("LockedBy");
+                        Object objAttr = attrAux.getValue();
+                        String strValue = "";
+                        if (objAttr != null) {
+                            strValue = attrAux.getValue().toString();
+                        }
+                        properties.put(PropertyIds.VERSION_SERIES_CHECKED_OUT_BY, objectFactory
+                                .createPropertyStringData(PropertyIds.VERSION_SERIES_CHECKED_OUT_BY, strValue));
+                    }
+
+                    // cmis:versionSeriesCheckedOutId
+                    if (FilterParser.isContainedInFilter(PropertyIds.VERSION_SERIES_CHECKED_OUT_ID, requestedIds)) {
+                        Object objAttr = recOPD.getAttr("LockedBy").getValue();
+                        String strValue = "";
+                        if (objAttr != null && attrAux.getValue().toString().equals(usuSesion)) {
+                            strValue = attrAux.getValue().toString();
+                        }
+                        properties.put(PropertyIds.VERSION_SERIES_CHECKED_OUT_ID, objectFactory
+                                .createPropertyStringData(PropertyIds.VERSION_SERIES_CHECKED_OUT_ID, strValue));
+
+                        // attrAux = recOPD.getAttr("LockedBy");
+                        // if (attrAux.getValue() != null &&
+                        // !attrAux.getValue().toString().equals(usuSesion)) {
+                        // properties.put(PropertyIds.VERSION_SERIES_CHECKED_OUT_ID, objectFactory
+                        // .createPropertyStringData(PropertyIds.VERSION_SERIES_CHECKED_OUT_ID,
+                        // usuSesion));
+                        // } else {
+                        // properties.put(PropertyIds.IS_PRIVATE_WORKING_COPY, objectFactory
+                        // .createPropertyStringData(PropertyIds.VERSION_SERIES_CHECKED_OUT_ID, ""));
+                        // }
+                    }
+
+                    // cmis:checkinComment
+                    if (FilterParser.isContainedInFilter(PropertyIds.CHECKIN_COMMENT, requestedIds)) {
+                        attrAux = recOPD.getAttr("Version");
+                        valorAttr = attrAux.getValue().toString();
+                        properties.put(PropertyIds.CHECKIN_COMMENT,
+                                objectFactory.createPropertyStringData(PropertyIds.CHECKIN_COMMENT, valorAttr));
+                    }
+
+                    if (context.getCmisVersion() != CmisVersion.CMIS_1_0) {
+
+                        // cmis:IsPrivateWorkingCopy
+                        if (FilterParser.isContainedInFilter(PropertyIds.IS_PRIVATE_WORKING_COPY, requestedIds)) {
+                            attrAux = recOPD.getAttr("LockedBy");
+                            if (attrAux.getValue() != null && attrAux.getValue().toString().equals(usuSesion)) {
+                                properties.put(PropertyIds.IS_PRIVATE_WORKING_COPY, objectFactory
+                                        .createPropertyBooleanData(PropertyIds.IS_PRIVATE_WORKING_COPY, true));
+                            } else {
+                                properties.put(PropertyIds.IS_PRIVATE_WORKING_COPY, objectFactory
+                                        .createPropertyBooleanData(PropertyIds.IS_PRIVATE_WORKING_COPY, false));
+                            }
+                        }
+                    }
+
+                    PDDocs objDoc = new PDDocs(sesProdoc.getMainSession());
+                    objDoc.LoadFull(recOPD.getAttr("PDId").getValue().toString());
+                    String nombreDoc = recOPD.getAttr("Name").getValue().toString();
+
+                    File destino = new File("C:\\pruebas\\API_disruptiva\\" + nombreDoc);
+
+                    OutputStream out;
+                    try {
+                        out = new FileOutputStream(destino);
+                        objDoc.getStream(out);
+                    } catch (FileNotFoundException ex) {
+                        throw new PDException(ex.getMessage());
+                    }
+
+                    if (destino.length() != 0) {
+
+                        BigDecimal length = BigDecimal.valueOf(destino.length());
+                        properties.put(PropertyIds.CONTENT_STREAM_LENGTH,
+                                objectFactory.createPropertyDecimalData(PropertyIds.CONTENT_STREAM_LENGTH, length));
+
+                        properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE, objectFactory.createPropertyStringData(
+                                PropertyIds.CONTENT_STREAM_MIME_TYPE, MimeTypes.getMIMEType(destino)));
+
+                        properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME, objectFactory
+                                .createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME, destino.getName()));
+                    }
+
+                    // if (destino.length() == 0) {
+                    // // addPropertyBigInteger(result, typeId, filter,
+                    // // PropertyIds.CONTENT_STREAM_LENGTH, null);
+                    // // properties.put(PropertyIds.CONTENT_STREAM_LENGTH, objectFactory
+                    // // .createPropertyIntegerData(PropertyIds.CONTENT_STREAM_LENGTH, null));
+                    // // addPropertyString(result, typeId, filter,
+                    // // PropertyIds.CONTENT_STREAM_MIME_TYPE, null);
+                    // // properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE, objectFactory
+                    // // .createPropertyStringData(PropertyIds.CONTENT_STREAM_MIME_TYPE, null));
+                    // // addPropertyString(result, typeId, filter,
+                    // // PropertyIds.CONTENT_STREAM_FILE_NAME, null);
+                    // // properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME, objectFactory
+                    // // .createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME, null));
+                    // } else {
+                    // // addPropertyInteger(result, typeId, filter,
+                    // PropertyIds.CONTENT_STREAM_LENGTH,
+                    // // file.length());
+                    //
+                    // BigDecimal length = BigDecimal.valueOf(destino.length());
+                    // properties.put(PropertyIds.CONTENT_STREAM_LENGTH,
+                    // objectFactory.createPropertyDecimalData(PropertyIds.CONTENT_STREAM_LENGTH,
+                    // length));
+                    //
+                    // // attrAux = recOPD.getAttr("MimeType");
+                    // // properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE,
+                    // // objectFactory.createPropertyStringData(
+                    // // PropertyIds.CONTENT_STREAM_MIME_TYPE, attrAux.getValue().toString()));
+                    // properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE,
+                    // objectFactory.createPropertyStringData(
+                    // PropertyIds.CONTENT_STREAM_MIME_TYPE, MimeTypes.getMIMEType(destino)));
+                    //
+                    // // attrAux = recOPD.getAttr("Name");
+                    // // properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME,
+                    // // objectFactory.createPropertyStringData(
+                    // // PropertyIds.CONTENT_STREAM_FILE_NAME, attrAux.getValue().toString()));
+                    // properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME, objectFactory
+                    // .createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME,
+                    // destino.getName()));
+                    // }
+
+                    // cmis:contentStreamId
+                    if (FilterParser.isContainedInFilter(PropertyIds.CONTENT_STREAM_ID, requestedIds)) {
+                        if (FilterParser.isContainedInFilter(PropertyIds.CONTENT_STREAM_ID, requestedIds)) {
+                            properties.put(PropertyIds.CONTENT_STREAM_ID,
+                                    objectFactory.createPropertyIdData(PropertyIds.CONTENT_STREAM_ID, "0"));
+                        }
+                    }
+
+                    // TODO Error Indica que no existe la propiedad en el objeto
+                    // // cmis:path
+                    // if (FilterParser.isContainedInFilter(PropertyIds.PATH, requestedIds)) {
+                    //
+                    //// String path = null;
+                    //// String parentId = recOPD.getAttr("ParentId").getValue().toString();
+                    //// if (parentId.equals("RootFolder")) {
+                    //// path = "/";
+                    //// } else {
+                    //// PDFolders parent = new PDFolders(sesProdoc.getMainSession());
+                    //// parent.LoadFull(parentId);
+                    //// path = parent.getPathId(parent.getPDId());
+                    //// }
+                    //
+                    // properties.put(PropertyIds.PATH,
+                    // objectFactory.createPropertyStringData(PropertyIds.PATH, destino.getPath()));
+                    //
+                    // }
+                }
+            }
+
+            List<PropertyData<?>> propertiesList = new ArrayList<PropertyData<?>>(properties.values());
+            Properties props = objectFactory.createPropertiesData(propertiesList);
+
+            objDataOut.setProperties(props);
+
+        } catch (PDException e) {
+            throw e;
+        }
+
+        return objDataOut;
+
+    }
+
+    private boolean existObjType(String nombreObjType) {
+
+        boolean exist = false;
+        TypeDefinition objType = this.typeManager.getInternalTypeDefinition(nombreObjType);
+
+        if (objType != null) {
+            exist = true;
+        }
+
+        return exist;
+    }
+
+    private void createOtherProperty(Map<String, PropertyData<?>> properties, Record recOPD, String nombreAttr) {
+
+        Attribute attr = recOPD.getAttr(nombreAttr);
+        BindingsObjectFactory objectFactory = new BindingsObjectFactoryImpl();
+
+        int tipoAttr = attr.getType();
+
+        switch (tipoAttr) {
+
+        case tINTEGER:
+            if (attr.getValue() != null) {
+                // MutablePropertyInteger createPropertyIntegerData(String id, List<BigInteger>
+                // values);
+
+                // MutablePropertyInteger createPropertyIntegerData(String id, BigInteger
+                // value);
+
+                BigInteger valorInt = BigInteger.valueOf((Integer) attr.getValue());
+                properties.put(nombreAttr, objectFactory.createPropertyIntegerData(nombreAttr, valorInt));
+            } else {
+
+            }
+            break;
+
+        case tFLOAT:
+            if (attr.getValue() != null) {
+                // MutablePropertyDecimal createPropertyDecimalData(String id, List<BigDecimal>
+                // values);
+
+                // MutablePropertyDecimal createPropertyDecimalData(String id, BigDecimal
+                // value);
+                BigDecimal valorFlo = BigDecimal.valueOf((Float) attr.getValue());
+                properties.put(nombreAttr, objectFactory.createPropertyDecimalData(nombreAttr, valorFlo));
+            } else {
+            }
+            break;
+
+        case tSTRING:
+            if (attr.getValue() != null) {
+                // MutablePropertyString createPropertyStringData(String id, List<String>
+                // values);
+
+                // MutablePropertyString createPropertyStringData(String id, String value);
+                properties.put(nombreAttr,
+                        objectFactory.createPropertyStringData(nombreAttr, attr.getValue().toString()));
+            } else {
+                properties.put(nombreAttr, objectFactory.createPropertyStringData(nombreAttr, ""));
+            }
+            break;
+
+        case tDATE:
+            if (attr.getValue() != null) {
+            } else {
+            }
+
+            break;
+
+        case tBOOLEAN:
+            if (attr.getValue() != null) {
+                // MutablePropertyBoolean createPropertyBooleanData(String id, List<Boolean>
+                // values)
+
+                // MutablePropertyBoolean createPropertyBooleanData(String id, Boolean value)
+
+                properties.put(nombreAttr,
+                        objectFactory.createPropertyBooleanData(nombreAttr, (Boolean) attr.getValue()));
+            } else {
+            }
+            break;
+
+        case tTIMESTAMP:
+            if (attr.getValue() != null) {
+            } else {
+            }
+            break;
+
+        case tTHES:
+            if (attr.getValue() != null) {
+            } else {
+
+            }
+            break;
+
+        default:
+            if (attr.getValue() != null) {
+            } else {
+            }
+            break;
+        }
+
+        // // MutablePropertyDateTime createPropertyDateTimeData(String id,
+        // // List<GregorianCalendar> values);
+        //
+        // MutablePropertyDateTime createPropertyDateTimeData(String id,
+        // GregorianCalendar value);
+        //
+        //
+        // // MutablePropertyHtml createPropertyHtmlData(String id, List<String>
+        // values);
+        //
+        // MutablePropertyHtml createPropertyHtmlData(String id, String value);
+        //
+        // // MutablePropertyId createPropertyIdData(String id, List<String> values);
+        //
+        // MutablePropertyId createPropertyIdData(String id, String value);
+        //
+        //
+        // // MutablePropertyUri createPropertyUriData(String id, List<String> values);
+        //
+        // MutablePropertyUri createPropertyUriData(String id, String value);
+
     }
 
     /**
@@ -1492,7 +2354,7 @@ public class FileShareRepository {
 
         // set object info of the the folder
         if (context.isObjectInfoRequired()) {
-            compileObjectData(context, folder, null, false, false, userReadOnly, objectInfos, null);
+            compileObjectData(context, folder, null, false, false, userReadOnly, objectInfos);
         }
 
         // get the tree
@@ -1527,7 +2389,7 @@ public class FileShareRepository {
             // add to list
             ObjectInFolderDataImpl objectInFolder = new ObjectInFolderDataImpl();
             objectInFolder.setObject(compileObjectData(context, child, filter, includeAllowableActions, false,
-                    userReadOnly, objectInfos, null));
+                    userReadOnly, objectInfos));
             if (includePathSegments) {
                 objectInFolder.setPathSegment(child.getName());
             }
@@ -1548,16 +2410,28 @@ public class FileShareRepository {
 
     /**
      * CMIS getFolderParent.
+     * 
+     * @throws PDException
      */
     public ObjectData getFolderParent(CallContext context, String folderId, String filter,
-            ObjectInfoHandler objectInfos) {
-        List<ObjectParentData> parents = getObjectParents(context, folderId, filter, false, false, objectInfos);
+            ObjectInfoHandler objectInfos, SesionProDoc sesion) throws PDException {
 
-        if (parents.isEmpty()) {
-            throw new CmisInvalidArgumentException("The root folder has no parent!");
+        ObjectData obj = new ObjectDataImpl();
+
+        try {
+
+            PDFolders foldHija = new PDFolders(sesion.getMainSession());
+            foldHija.LoadFull(folderId);
+            String parentId = foldHija.getParentId();
+            PDFolders foldParent = new PDFolders(sesion.getMainSession());
+            foldParent.LoadFull(parentId);
+            obj = compileOPDProp(context, sesion, filter, foldParent);
+
+        } catch (PDException e) {
+            throw e;
         }
 
-        return parents.get(0).getObject();
+        return obj;
     }
 
     /**
@@ -1585,12 +2459,12 @@ public class FileShareRepository {
 
         // set object info of the the object
         if (context.isObjectInfoRequired()) {
-            compileObjectData(context, file, null, false, false, userReadOnly, objectInfos, null);
+            compileObjectData(context, file, null, false, false, userReadOnly, objectInfos);
         }
 
         // get parent folder
         File parent = file.getParentFile();
-        ObjectData object = compileObjectData(context, parent, filterCollection, iaa, false, userReadOnly, objectInfos, null);
+        ObjectData object = compileObjectData(context, parent, filterCollection, iaa, false, userReadOnly, objectInfos);
 
         ObjectParentDataImpl result = new ObjectParentDataImpl();
         result.setObject(object);
@@ -1631,7 +2505,7 @@ public class FileShareRepository {
         }
 
         return compileObjectData(context, file, filterCollection, includeAllowableActions, includeACL, userReadOnly,
-                objectInfos, null);
+                objectInfos);
     }
 
     // --- helpers ---
@@ -1640,11 +2514,11 @@ public class FileShareRepository {
      * Compiles an object type object from a file or folder.
      */
     private ObjectData compileObjectData(CallContext context, File file, Set<String> filter,
-            boolean includeAllowableActions, boolean includeAcl, boolean userReadOnly, ObjectInfoHandler objectInfos, SesionProDoc sesion) {
+            boolean includeAllowableActions, boolean includeAcl, boolean userReadOnly, ObjectInfoHandler objectInfos) {
         ObjectDataImpl result = new ObjectDataImpl();
         ObjectInfoImpl objectInfo = new ObjectInfoImpl();
 
-        result.setProperties(compileProperties(context, file, filter, objectInfo, sesion));
+        result.setProperties(compileProperties(context, file, filter, objectInfo));
 
         if (includeAllowableActions) {
             result.setAllowableActions(compileAllowableActions(file, userReadOnly));
@@ -1667,7 +2541,7 @@ public class FileShareRepository {
      * Gathers all base properties of a file or folder.
      */
     private Properties compileProperties(CallContext context, File file, Set<String> orgfilter,
-            ObjectInfoImpl objectInfo, SesionProDoc sesion) {
+            ObjectInfoImpl objectInfo) {
         if (file == null) {
             throw new IllegalArgumentException("File must not be null!");
         }
@@ -1721,25 +2595,6 @@ public class FileShareRepository {
             objectInfo.setWorkingCopyId(null);
             objectInfo.setWorkingCopyOriginalId(null);
         }
-
-//        Record recObjOPD = null;
-//        ObjPD objOPD = null;
-//        String objectId = null;
-//        
-//        // Obtenemos el record del objeto
-//        try {
-//            if (file.isDirectory()) {
-//                objOPD = (PDFolders) objOPD;
-//                PDFolders folder = new PDFolders(sesion.getMainSession(), objectId);
-//                recObjOPD = folder.getRecord();
-//            } else {
-//                objOPD = (PDDocs) objOPD;
-//                PDDocs doc = new PDDocs(sesion.getMainSession(), objectId);
-//                recObjOPD = doc.getRecord();
-//            }
-//        } catch (PDException e) {
-//            e.printStackTrace();
-//        }
 
         // let's do it
         try {
@@ -2217,6 +3072,59 @@ public class FileShareRepository {
         return result;
     }
 
+    private AllowableActions compileAllowableActions(SesionProDoc sesProdoc, Record recObjOPD, boolean isFolder,
+            boolean userReadOnly) throws PDException {
+
+        // boolean isReadOnly = !file.canWrite();
+        boolean isReadOnly = true; // TODO Ver como obtener este dato
+        String parent = recObjOPD.getAttr("PDId").getValue().toString();
+        boolean isRoot = parent.equals(ROOT_ID);
+
+        Set<Action> aas = EnumSet.noneOf(Action.class);
+
+        addAction(aas, Action.CAN_GET_OBJECT_PARENTS, !isRoot);
+        addAction(aas, Action.CAN_GET_PROPERTIES, true);
+        addAction(aas, Action.CAN_UPDATE_PROPERTIES, !userReadOnly && !isReadOnly);
+        addAction(aas, Action.CAN_MOVE_OBJECT, !userReadOnly && !isRoot);
+        addAction(aas, Action.CAN_DELETE_OBJECT, !userReadOnly && !isReadOnly && !isRoot);
+        addAction(aas, Action.CAN_GET_ACL, true);
+
+        if (isFolder) {
+            addAction(aas, Action.CAN_GET_DESCENDANTS, true);
+            addAction(aas, Action.CAN_GET_CHILDREN, true);
+            addAction(aas, Action.CAN_GET_FOLDER_PARENT, !isRoot);
+            addAction(aas, Action.CAN_GET_FOLDER_TREE, true);
+            addAction(aas, Action.CAN_CREATE_DOCUMENT, !userReadOnly);
+            addAction(aas, Action.CAN_CREATE_FOLDER, !userReadOnly);
+            addAction(aas, Action.CAN_DELETE_TREE, !userReadOnly && !isReadOnly);
+        } else {
+
+            PDDocs objDoc = new PDDocs(sesProdoc.getMainSession());
+            objDoc.LoadFull(recObjOPD.getAttr("PDId").getValue().toString());
+            String nombreDoc = recObjOPD.getAttr("Name").getValue().toString();
+
+            File destino = new File("C:\\pruebas\\API_disruptiva\\" + nombreDoc);
+
+            OutputStream out;
+            try {
+                out = new FileOutputStream(destino);
+                objDoc.getStream(out);
+            } catch (FileNotFoundException ex) {
+                throw new PDException(ex.getMessage());
+            }
+
+            addAction(aas, Action.CAN_GET_CONTENT_STREAM, destino.length() > 0);
+            addAction(aas, Action.CAN_SET_CONTENT_STREAM, !userReadOnly && !isReadOnly);
+            addAction(aas, Action.CAN_DELETE_CONTENT_STREAM, !userReadOnly && !isReadOnly);
+            addAction(aas, Action.CAN_GET_ALL_VERSIONS, true);
+        }
+
+        AllowableActionsImpl result = new AllowableActionsImpl();
+        result.setAllowableActions(aas);
+
+        return result;
+    }
+
     private void addAction(Set<Action> aas, Action action, boolean condition) {
         if (condition) {
             aas.add(action);
@@ -2240,6 +3148,50 @@ public class FileShareRepository {
             entry.setPermissions(new ArrayList<String>());
             entry.getPermissions().add(BasicPermissions.READ);
             if (!ue.getValue().booleanValue() && file.canWrite()) {
+                entry.getPermissions().add(BasicPermissions.WRITE);
+                entry.getPermissions().add(BasicPermissions.ALL);
+            }
+
+            entry.setDirect(true);
+
+            // add ACE
+            result.getAces().add(entry);
+        }
+
+        return result;
+    }
+
+    /**
+     * Compiles the ACL for a file or folder.
+     */
+    private Acl compileAcl(Record recObjOPD, SesionProDoc sesProdoc) {
+        AccessControlListImpl result = new AccessControlListImpl();
+        result.setAces(new ArrayList<Ace>());
+
+        // TODO Tratamiento ACL OPD a ACL CMIS
+        try {
+            Attribute aclObjOPD = recObjOPD.getAttr("ACL");
+
+            PDACL aclOPD = new PDACL(sesProdoc.getMainSession());
+            aclOPD.Load(aclObjOPD.getValue().toString());
+            Record recACL = aclOPD.getRecord();
+            System.out.println("ACL rec");
+        } catch (PDException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        for (Map.Entry<String, Boolean> ue : readWriteUserMap.entrySet()) {
+            // create principal
+            AccessControlPrincipalDataImpl principal = new AccessControlPrincipalDataImpl(ue.getKey());
+
+            // create ACE
+            AccessControlEntryImpl entry = new AccessControlEntryImpl();
+            entry.setPrincipal(principal);
+            entry.setPermissions(new ArrayList<String>());
+            entry.getPermissions().add(BasicPermissions.READ);
+            // if (!ue.getValue().booleanValue() && file.canWrite()) {
+            if (!ue.getValue().booleanValue()) {
                 entry.getPermissions().add(BasicPermissions.WRITE);
                 entry.getPermissions().add(BasicPermissions.ALL);
             }
@@ -2355,6 +3307,7 @@ public class FileShareRepository {
 
         return new File(root,
                 (new String(Base64.decode(id.getBytes("US-ASCII")), "UTF-8")).replace('/', File.separatorChar));
+
     }
 
     /**
