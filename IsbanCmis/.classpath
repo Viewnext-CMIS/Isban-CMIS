@@ -50,5 +50,6 @@
 	<classpathentry kind="lib" path="libsProDoc/lucene-queryparser-5.3.0.jar"/>
 	<classpathentry kind="lib" path="libsProDoc/Prodoc.jar"/>
 	<classpathentry kind="lib" path="libsProDoc/tika-app-1.10.jar"/>
+	<classpathentry kind="lib" path="libsProDoc/jsqlparser.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
