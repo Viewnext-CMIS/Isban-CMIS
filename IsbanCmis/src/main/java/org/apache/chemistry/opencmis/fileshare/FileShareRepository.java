@@ -1708,25 +1708,40 @@ public class FileShareRepository {
 
                 case "FolderType":
 
-                    if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID, requestedIds)) {
-                        properties.put(PropertyIds.OBJECT_TYPE_ID,
-                                objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID, "cmis:folder"));
-                    }
-
-                    // // TODO Realizar este tratamiento cuando tengamos los typeDefs de OPD
-
-                    // PDObjDefs Def = new PDObjDefs(sesProdoc.getMainSession());
-                    // Def.Load(valorAttr);
-                    //
-                    // if (Def.getParent().toString().equals("PD_FOLDERS")) {
-                    // valorAttr = "cmis:folder";
-                    // }
-                    //
                     // if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID,
                     // requestedIds)) {
                     // properties.put(PropertyIds.OBJECT_TYPE_ID,
-                    // objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID, valorAttr));
+                    // objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID,
+                    // "cmis:folder"));
                     // }
+                    //
+                    // // // TODO Realizar este tratamiento cuando tengamos los typeDefs de OPD
+                    //
+                    // // PDObjDefs Def = new PDObjDefs(sesProdoc.getMainSession());
+                    // // Def.Load(valorAttr);
+                    // //
+                    // // if (Def.getParent().toString().equals("PD_FOLDERS")) {
+                    // // valorAttr = "cmis:folder";
+                    // // }
+                    // //
+                    // // if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID,
+                    // // requestedIds)) {
+                    // // properties.put(PropertyIds.OBJECT_TYPE_ID,
+                    // // objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID,
+                    // valorAttr));
+                    // // }
+
+                    // TODO Realizar este tratamiento cuando tengamos los typeDefs de OPD
+                    if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID, requestedIds)) {
+
+                        valorAttr = recOPD.getAttr("FolderType").getValue().toString();
+                        if (valorAttr.equals("PD_FOLDERS")) {
+                            valorAttr = "cmis:folder";
+                        }
+
+                        properties.put(PropertyIds.OBJECT_TYPE_ID,
+                                objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID, valorAttr));
+                    }
                     break;
 
                 case "PDAutor":
