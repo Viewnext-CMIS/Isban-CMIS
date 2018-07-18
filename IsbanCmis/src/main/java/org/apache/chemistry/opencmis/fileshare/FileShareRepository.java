@@ -18,6 +18,7 @@
  */
 package org.apache.chemistry.opencmis.fileshare;
 
+import java.awt.Desktop;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -30,6 +31,8 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -1316,55 +1319,80 @@ public class FileShareRepository {
             String nombreDoc = recObjDoc.getAttr("Name").getValue().toString();
             // String mimeType = recObjDoc.getAttr("MimeType").getValue().toString();
 
-            File destino = new File("C:\\pruebas\\API_disruptiva\\" + nombreDoc);
+            boolean empiezaConHttp = nombreDoc.substring(0).startsWith("http");
 
-            OutputStream out;
-            try {
-                out = new FileOutputStream(destino);
-                objDoc.getStream(out);
-            } catch (FileNotFoundException ex) {
-                throw new PDException(ex.getMessage());
-            }
+            // Si el documento es un enlace (no tiene adjunto)
+            if (empiezaConHttp) {
 
-            // Tenemos que obtener el Stream
-            InputStream stream = null;
-            try {
-                stream = new BufferedInputStream(new FileInputStream(destino), 64 * 1024);
-                if (offset != null || length != null) {
-                    stream = new ContentRangeInputStream(stream, offset, length);
+                System.out.println();
+                Desktop enlace = Desktop.getDesktop();
+                try {
+                    enlace.browse(new URI(nombreDoc));
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (URISyntaxException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
-            } catch (FileNotFoundException e) {
-                throw new CmisObjectNotFoundException(e.getMessage(), e);
+
+            } else { // Si el documento tiene un adjunto
+
+                String rutaTemp = System.getProperty("java.io.tmpdir");
+                File destino = new File(rutaTemp + nombreDoc);
+
+                // File destino = new File("C:\\pruebas\\API_disruptiva\\" + nombreDoc);
+
+                OutputStream out;
+                try {
+                    out = new FileOutputStream(destino);
+                    objDoc.getStream(out);
+                } catch (FileNotFoundException ex) {
+                    throw new PDException(ex.getMessage());
+                }
+
+                // Tenemos que obtener el Stream
+                InputStream stream = null;
+                try {
+                    stream = new BufferedInputStream(new FileInputStream(destino), 64 * 1024);
+                    if (offset != null || length != null) {
+                        stream = new ContentRangeInputStream(stream, offset, length);
+                    }
+                } catch (FileNotFoundException e) {
+                    throw new CmisObjectNotFoundException(e.getMessage(), e);
+                }
+
+                // compile data
+                ContentStreamImpl result;
+                if ((offset != null && offset.longValue() > 0) || length != null) {
+                    result = new PartialContentStreamImpl();
+                } else {
+                    result = new ContentStreamImpl();
+                }
+
+                result.setFileName(recObjDoc.getAttr("Name").getValue().toString());
+
+                // TODO Obtener el tamaño del documento
+                // result.setLength(BigInteger.valueOf(file.length()));
+
+                // Ejemplo InsertProDoc
+                // // PDMimeType mimetype = new PDMimeType(sesion.getMainSession());
+                // // String mimeOPD = mimetype.SolveName(contentStream.getFileName());
+
+                PDMimeType mimetype = new PDMimeType(sesProdoc.getMainSession());
+                String mimeDoc = mimetype.SolveName(recObjDoc.getAttr("Name").getValue().toString());
+
+                result.setMimeType(mimeDoc);
+                result.setStream(stream);
+
+                return result;
             }
-
-            // compile data
-            ContentStreamImpl result;
-            if ((offset != null && offset.longValue() > 0) || length != null) {
-                result = new PartialContentStreamImpl();
-            } else {
-                result = new ContentStreamImpl();
-            }
-
-            result.setFileName(recObjDoc.getAttr("Name").getValue().toString());
-
-            // TODO Obtener el tamaño del documento
-            // result.setLength(BigInteger.valueOf(file.length()));
-
-            // Ejemplo InsertProDoc
-            // // PDMimeType mimetype = new PDMimeType(sesion.getMainSession());
-            // // String mimeOPD = mimetype.SolveName(contentStream.getFileName());
-
-            PDMimeType mimetype = new PDMimeType(sesProdoc.getMainSession());
-            String mimeDoc = mimetype.SolveName(recObjDoc.getAttr("Name").getValue().toString());
-
-            result.setMimeType(mimeDoc);
-            result.setStream(stream);
-
-            return result;
 
         } catch (PDException e1) {
             throw e1;
         }
+
+        return null;
 
     }
 
@@ -1728,8 +1756,12 @@ public class FileShareRepository {
                 case "PDDate":
 
                     if (tipo.equalsIgnoreCase("PD_FOLDERS")) {
+
                         GregorianCalendar cal = new GregorianCalendar();
-                        cal.setTime((Date) attr.getValue());
+
+                        if (!valorAttr.equals("")) {
+                            cal.setTime((Date) attr.getValue());
+                        }
 
                         // cmis:creationDate
                         if (FilterParser.isContainedInFilter(PropertyIds.CREATION_DATE, requestedIds)) {
@@ -1792,7 +1824,10 @@ public class FileShareRepository {
                 case "DocDate":
 
                     GregorianCalendar cal = new GregorianCalendar();
-                    cal.setTime((Date) attr.getValue());
+
+                    if (!valorAttr.equals("")) {
+                        cal.setTime((Date) attr.getValue());
+                    }
 
                     // cmis:creationDate
                     if (FilterParser.isContainedInFilter(PropertyIds.CREATION_DATE, requestedIds)) {
@@ -1871,7 +1906,7 @@ public class FileShareRepository {
 
                     // TODO Comprobar tratamiento para el resto de atributos que no sean los básicos
                     createOtherProperty(properties, recOPD, nombreAttr);
-                    
+
                     break;
                 }
 
@@ -2054,68 +2089,49 @@ public class FileShareRepository {
                     objDoc.LoadFull(recOPD.getAttr("PDId").getValue().toString());
                     String nombreDoc = recOPD.getAttr("Name").getValue().toString();
 
-                    File destino = new File("C:\\pruebas\\API_disruptiva\\" + nombreDoc);
+                    boolean empiezaConHttp = nombreDoc.substring(0).startsWith("http");
 
-                    OutputStream out;
-                    try {
-                        out = new FileOutputStream(destino);
-                        objDoc.getStream(out);
-                    } catch (FileNotFoundException ex) {
-                        throw new PDException(ex.getMessage());
-                    }
+                    // Si el documento es un enlace (no tiene adjunto)
+                    if (empiezaConHttp) {
 
-                    if (destino.length() != 0) {
-
-                        BigDecimal length = BigDecimal.valueOf(destino.length());
+                        BigDecimal length = BigDecimal.valueOf(0);
                         properties.put(PropertyIds.CONTENT_STREAM_LENGTH,
                                 objectFactory.createPropertyDecimalData(PropertyIds.CONTENT_STREAM_LENGTH, length));
 
-                        properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE, objectFactory.createPropertyStringData(
-                                PropertyIds.CONTENT_STREAM_MIME_TYPE, MimeTypes.getMIMEType(destino)));
+                        properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE,
+                                objectFactory.createPropertyStringData(PropertyIds.CONTENT_STREAM_MIME_TYPE, "http"));
 
                         properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME, objectFactory
-                                .createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME, destino.getName()));
-                    }
+                                .createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME, nombreDoc));
 
-                    // if (destino.length() == 0) {
-                    // // addPropertyBigInteger(result, typeId, filter,
-                    // // PropertyIds.CONTENT_STREAM_LENGTH, null);
-                    // // properties.put(PropertyIds.CONTENT_STREAM_LENGTH, objectFactory
-                    // // .createPropertyIntegerData(PropertyIds.CONTENT_STREAM_LENGTH, null));
-                    // // addPropertyString(result, typeId, filter,
-                    // // PropertyIds.CONTENT_STREAM_MIME_TYPE, null);
-                    // // properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE, objectFactory
-                    // // .createPropertyStringData(PropertyIds.CONTENT_STREAM_MIME_TYPE, null));
-                    // // addPropertyString(result, typeId, filter,
-                    // // PropertyIds.CONTENT_STREAM_FILE_NAME, null);
-                    // // properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME, objectFactory
-                    // // .createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME, null));
-                    // } else {
-                    // // addPropertyInteger(result, typeId, filter,
-                    // PropertyIds.CONTENT_STREAM_LENGTH,
-                    // // file.length());
-                    //
-                    // BigDecimal length = BigDecimal.valueOf(destino.length());
-                    // properties.put(PropertyIds.CONTENT_STREAM_LENGTH,
-                    // objectFactory.createPropertyDecimalData(PropertyIds.CONTENT_STREAM_LENGTH,
-                    // length));
-                    //
-                    // // attrAux = recOPD.getAttr("MimeType");
-                    // // properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE,
-                    // // objectFactory.createPropertyStringData(
-                    // // PropertyIds.CONTENT_STREAM_MIME_TYPE, attrAux.getValue().toString()));
-                    // properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE,
-                    // objectFactory.createPropertyStringData(
-                    // PropertyIds.CONTENT_STREAM_MIME_TYPE, MimeTypes.getMIMEType(destino)));
-                    //
-                    // // attrAux = recOPD.getAttr("Name");
-                    // // properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME,
-                    // // objectFactory.createPropertyStringData(
-                    // // PropertyIds.CONTENT_STREAM_FILE_NAME, attrAux.getValue().toString()));
-                    // properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME, objectFactory
-                    // .createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME,
-                    // destino.getName()));
-                    // }
+                    } else { // Si el documento tiene un adjunto
+
+                        String rutaTemp = System.getProperty("java.io.tmpdir");
+                        File destino = new File(rutaTemp + nombreDoc);
+
+                        OutputStream out = null;
+                        try {
+                            out = new FileOutputStream(destino);
+                            objDoc.getStream(out);
+                        } catch (FileNotFoundException ex) {
+                            throw new PDException(ex.getMessage());
+                        }
+
+                        if (destino.length() != 0) {
+
+                            BigDecimal length = BigDecimal.valueOf(destino.length());
+                            properties.put(PropertyIds.CONTENT_STREAM_LENGTH,
+                                    objectFactory.createPropertyDecimalData(PropertyIds.CONTENT_STREAM_LENGTH, length));
+
+                            properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE, objectFactory.createPropertyStringData(
+                                    PropertyIds.CONTENT_STREAM_MIME_TYPE, MimeTypes.getMIMEType(destino)));
+
+                            properties.put(PropertyIds.CONTENT_STREAM_FILE_NAME, objectFactory
+                                    .createPropertyStringData(PropertyIds.CONTENT_STREAM_FILE_NAME, destino.getName()));
+                        }
+
+                        destino.delete();
+                    }
 
                     // cmis:contentStreamId
                     if (FilterParser.isContainedInFilter(PropertyIds.CONTENT_STREAM_ID, requestedIds)) {
@@ -2125,7 +2141,8 @@ public class FileShareRepository {
                         }
                     }
 
-                    // TODO Error Indica que no existe la propiedad en el objeto
+                    // TODO Error Indica que no existe la propiedad en el objeto --> Sería necesario
+                    // mostrarlo
                     // // cmis:path
                     // if (FilterParser.isContainedInFilter(PropertyIds.PATH, requestedIds)) {
                     //
@@ -2143,6 +2160,7 @@ public class FileShareRepository {
                     // objectFactory.createPropertyStringData(PropertyIds.PATH, destino.getPath()));
                     //
                     // }
+
                 }
             }
 
@@ -3066,17 +3084,29 @@ public class FileShareRepository {
             objDoc.LoadFull(recObjOPD.getAttr("PDId").getValue().toString());
             String nombreDoc = recObjOPD.getAttr("Name").getValue().toString();
 
-            File destino = new File("C:\\pruebas\\API_disruptiva\\" + nombreDoc);
+            boolean empiezaConHttp = nombreDoc.substring(0).startsWith("http");
 
-            OutputStream out;
-            try {
-                out = new FileOutputStream(destino);
-                objDoc.getStream(out);
-            } catch (FileNotFoundException ex) {
-                throw new PDException(ex.getMessage());
+            // Si el documento es un enlace (no tiene adjunto)
+            if (empiezaConHttp) {
+
+                addAction(aas, Action.CAN_GET_CONTENT_STREAM, false);
+
+            } else { // Si el documento tiene un adjunto
+
+                String rutaTemp = System.getProperty("java.io.tmpdir");
+                File destino = new File(rutaTemp + nombreDoc);
+
+                OutputStream out;
+                try {
+                    out = new FileOutputStream(destino);
+                    objDoc.getStream(out);
+                } catch (FileNotFoundException ex) {
+                    throw new PDException(ex.getMessage());
+                }
+
+                addAction(aas, Action.CAN_GET_CONTENT_STREAM, destino.length() > 0);
             }
 
-            addAction(aas, Action.CAN_GET_CONTENT_STREAM, destino.length() > 0);
             addAction(aas, Action.CAN_SET_CONTENT_STREAM, !userReadOnly && !isReadOnly);
             addAction(aas, Action.CAN_DELETE_CONTENT_STREAM, !userReadOnly && !isReadOnly);
             addAction(aas, Action.CAN_GET_ALL_VERSIONS, true);
