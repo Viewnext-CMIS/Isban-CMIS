@@ -610,7 +610,16 @@ public class FileShareRepository {
             throw new CmisNameConstraintViolationException("Name is not valid!");
         }
 
+<<<<<<< HEAD
         String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId, contentStream,typeId);
+=======
+        // String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId,
+        // getId(newFile), contentStream);
+        String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId, contentStream,typeId);
+
+
+        // return getId(newFile);
+>>>>>>> branch 'master' of https://github.com/Viewnext-CMIS/Isban-CMIS.git
         return idFileOPD;
     }
 
