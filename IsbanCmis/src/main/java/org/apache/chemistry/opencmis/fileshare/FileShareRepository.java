@@ -1174,20 +1174,6 @@ public class FileShareRepository {
             Boolean includeAllowableActions, Boolean includeAcl, ObjectInfoHandler objectInfos, SesionProDoc sesProdoc)
             throws PDException {
 
-        //// probando
-        // ArrayList <Object> typeDefs = XmlUtil.convertirXmlObjectType( context,
-        //// sesProdoc, "PruebaObjectType");
-        //
-        // if(typeDefs.get(0) instanceof FolderTypeDefinitionImpl) {
-        // FolderTypeDefinitionImpl typeDef = (FolderTypeDefinitionImpl)
-        //// typeDefs.get(0);
-        // this.typeManager.addTypeDefinition(typeDef);
-        // }else {
-        // DocumentTypeDefinitionImpl typeDef = (DocumentTypeDefinitionImpl)
-        //// typeDefs.get(0);
-        // this.typeManager.addTypeDefinition(typeDef);
-        // }
-
         LOG.debug("start getObject()");
 
         if (objectId == null && versionServicesId == null) {
@@ -1651,13 +1637,14 @@ public class FileShareRepository {
         try {
 
             String tipo;
+
             if (child instanceof PDFolders) {
                 PDFolders fold = new PDFolders(sesProdoc.getMainSession());
                 fold.LoadFull(((PDFolders) child).getPDId().toString());
                 recOPD = fold.getRecSum();
 
                 String folderType = recOPD.getAttr("FolderType").getValue().toString();
-                if (existObjType(folderType) && !folderType.equals("PD_FOLDERS")) {
+                if (!existObjType(folderType) && !folderType.equals("PD_FOLDERS")) {
                     ArrayList<Object> typeDefs = XmlUtil.convertirXmlObjectType(context, sesProdoc,
                             recOPD.getAttr("FolderType").getValue().toString());
                     FolderTypeDefinitionImpl typeDef = (FolderTypeDefinitionImpl) typeDefs.get(0);
@@ -1665,6 +1652,7 @@ public class FileShareRepository {
                 }
 
                 tipo = "PD_FOLDERS";
+
             } else {
                 PDDocs doc = new PDDocs(sesProdoc.getMainSession());
                 doc.LoadFull(((PDDocs) child).getPDId().toString());
@@ -1708,30 +1696,6 @@ public class FileShareRepository {
 
                 case "FolderType":
 
-                    // if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID,
-                    // requestedIds)) {
-                    // properties.put(PropertyIds.OBJECT_TYPE_ID,
-                    // objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID,
-                    // "cmis:folder"));
-                    // }
-                    //
-                    // // // TODO Realizar este tratamiento cuando tengamos los typeDefs de OPD
-                    //
-                    // // PDObjDefs Def = new PDObjDefs(sesProdoc.getMainSession());
-                    // // Def.Load(valorAttr);
-                    // //
-                    // // if (Def.getParent().toString().equals("PD_FOLDERS")) {
-                    // // valorAttr = "cmis:folder";
-                    // // }
-                    // //
-                    // // if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID,
-                    // // requestedIds)) {
-                    // // properties.put(PropertyIds.OBJECT_TYPE_ID,
-                    // // objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID,
-                    // valorAttr));
-                    // // }
-
-                    // TODO Realizar este tratamiento cuando tengamos los typeDefs de OPD
                     if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID, requestedIds)) {
 
                         valorAttr = recOPD.getAttr("FolderType").getValue().toString();
@@ -1742,6 +1706,7 @@ public class FileShareRepository {
                         properties.put(PropertyIds.OBJECT_TYPE_ID,
                                 objectFactory.createPropertyIdData(PropertyIds.OBJECT_TYPE_ID, valorAttr));
                     }
+
                     break;
 
                 case "PDAutor":
@@ -1847,8 +1812,6 @@ public class FileShareRepository {
 
                     if (FilterParser.isContainedInFilter(PropertyIds.OBJECT_TYPE_ID, requestedIds)) {
 
-                        // TODO Comprobar este tratamiento cuando tengamos los typeDefs de OPD
-
                         valorAttr = recOPD.getAttr("DocType").getValue().toString();
                         if (valorAttr.equals("PD_DOCS")) {
                             valorAttr = "cmis:document";
@@ -1865,8 +1828,6 @@ public class FileShareRepository {
 
                 case "MimeType":
 
-                    // PDMimeType mime = new PDMimeType(sesProdoc.getMainSession());
-                    // valorMime = mime.SolveExt(valorAttr);
                     properties.put(PropertyIds.CONTENT_STREAM_MIME_TYPE,
                             objectFactory.createPropertyStringData(PropertyIds.CONTENT_STREAM_MIME_TYPE, valorAttr));
                     break;
@@ -1909,10 +1870,8 @@ public class FileShareRepository {
                 default:
 
                     // TODO Comprobar tratamiento para el resto de atributos que no sean los básicos
-
-                    if (!tipo.equalsIgnoreCase("PD_FOLDERS")) {
-                        createOtherProperty(properties, recOPD, nombreAttr);
-                    }
+                    createOtherProperty(properties, recOPD, nombreAttr);
+                    
                     break;
                 }
 
@@ -1926,23 +1885,17 @@ public class FileShareRepository {
 
                 // cmis:baseTypeId
                 if (FilterParser.isContainedInFilter(PropertyIds.BASE_TYPE_ID, requestedIds)) {
-                    properties.put(PropertyIds.BASE_TYPE_ID,
-                            objectFactory.createPropertyStringData(PropertyIds.BASE_TYPE_ID, "cmis:folder"));
 
-                    // TODO Realizar este tratamiento cuando tengamos los typeDefs de OPD
-                    // String idObj = recOPD.getAttr("PDId").getValue().toString();
-                    // PDFolders obj = new PDFolders(sesProdoc.getMainSession());
-                    // Record recObj = obj.Load(idObj);
-                    // String parentId = recObj.getAttr("parentId").getValue().toString();
-                    // Record recObjParent = obj.Load(parentId);
-                    // valorAttr = recObjParent.getAttr("FolderType").getValue().toString();
-                    //
-                    // if (valorAttr.equals("PD_FOLDERS")) {
-                    // valorAttr = "cmis:folder";
-                    // }
-                    //
-                    // properties.put(PropertyIds.BASE_TYPE_ID,
-                    // objectFactory.createPropertyStringData(PropertyIds.BASE_TYPE_ID, valorAttr));
+                    PDObjDefs objDef = new PDObjDefs(sesProdoc.getMainSession());
+                    Record recObjDef = objDef.Load(recOPD.getAttr("FolderType").getValue().toString());
+                    valorAttr = recObjDef.getAttr("Parent").getValue().toString();
+
+                    if (valorAttr.equals("PD_FOLDERS")) {
+                        valorAttr = "cmis:folder";
+                    }
+
+                    properties.put(PropertyIds.BASE_TYPE_ID,
+                            objectFactory.createPropertyStringData(PropertyIds.BASE_TYPE_ID, valorAttr));
                 }
 
                 // TODO Como tratamos este campo ??
@@ -1986,11 +1939,6 @@ public class FileShareRepository {
                     // cmis:baseTypeId
                     if (FilterParser.isContainedInFilter(PropertyIds.BASE_TYPE_ID, requestedIds)) {
 
-                        // properties.put(PropertyIds.BASE_TYPE_ID,
-                        // objectFactory.createPropertyStringData(PropertyIds.BASE_TYPE_ID,
-                        // "cmis:document"));
-
-                        // // TODO Comprobar este tratamiento cuando tengamos los typeDefs de OPD
                         PDObjDefs objDef = new PDObjDefs(sesProdoc.getMainSession());
                         Record recObjDef = objDef.Load(recOPD.getAttr("DocType").getValue().toString());
                         valorAttr = recObjDef.getAttr("Parent").getValue().toString();
