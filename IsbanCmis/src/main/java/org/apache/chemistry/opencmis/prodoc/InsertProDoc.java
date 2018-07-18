@@ -66,12 +66,12 @@ public class InsertProDoc {
      * @param properties
      * @param sesion
      * @param parentId
-     * @param typeId 
      * @param contentStream
+     * @param typeId 
      * @return Id del documento creado
      */
     public static String crearDocumento(Properties properties, SesionProDoc sesion, String parentId,
-            String typeId, ContentStream contentStream) {
+            ContentStream contentStream, String typeId) {
         PDDocs doc = null;
         try {
             PropertyData<?> nombre = properties.getProperties().get("cmis:name");

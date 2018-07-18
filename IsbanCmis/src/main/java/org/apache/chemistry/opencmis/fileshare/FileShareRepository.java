@@ -610,42 +610,7 @@ public class FileShareRepository {
             throw new CmisNameConstraintViolationException("Name is not valid!");
         }
 
-        // get parent File
-        File parent = getFile(folderId);
-        if (!parent.isDirectory()) {
-            throw new CmisObjectNotFoundException("Parent is not a folder!");
-        }
-
-        // check the file
-        File newFile = new File(parent, name);
-        if (newFile.exists()) {
-            throw new CmisNameConstraintViolationException("Document already exists!");
-        }
-
-        // String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId,
-        // getId(newFile), contentStream);
-        String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId, contentStream, getId(newFile));
-
-        // create the file
-        try {
-            newFile.createNewFile();
-        } catch (IOException e) {
-            throw new CmisStorageException("Could not create file: " + e.getMessage(), e);
-        }
-
-        // write content, if available
-        if (contentStream != null && contentStream.getStream() != null) {
-            writeContent(newFile, contentStream.getStream());
-        }
-
-        // set creation date
-        addPropertyDateTime(props, typeId, null, PropertyIds.CREATION_DATE,
-                FileShareUtils.millisToCalendar(newFile.lastModified()));
-
-        // write properties
-        writePropertiesFile(newFile, props);
-
-        // return getId(newFile);
+        String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId, contentStream,typeId);
         return idFileOPD;
     }
 
@@ -1761,19 +1726,19 @@ public class FileShareRepository {
 
                         if (!valorAttr.equals("")) {
                             cal.setTime((Date) attr.getValue());
+                            // cmis:creationDate
+                            if (FilterParser.isContainedInFilter(PropertyIds.CREATION_DATE, requestedIds)) {
+                                properties.put(PropertyIds.CREATION_DATE,
+                                        objectFactory.createPropertyDateTimeData(PropertyIds.CREATION_DATE, cal));
+                            }
+
+                            // cmis:lastModificationDate
+                            if (FilterParser.isContainedInFilter(PropertyIds.LAST_MODIFICATION_DATE, requestedIds)) {
+                                properties.put(PropertyIds.LAST_MODIFICATION_DATE,
+                                        objectFactory.createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
+                            }
                         }
 
-                        // cmis:creationDate
-                        if (FilterParser.isContainedInFilter(PropertyIds.CREATION_DATE, requestedIds)) {
-                            properties.put(PropertyIds.CREATION_DATE,
-                                    objectFactory.createPropertyDateTimeData(PropertyIds.CREATION_DATE, cal));
-                        }
-
-                        // cmis:lastModificationDate
-                        if (FilterParser.isContainedInFilter(PropertyIds.LAST_MODIFICATION_DATE, requestedIds)) {
-                            properties.put(PropertyIds.LAST_MODIFICATION_DATE,
-                                    objectFactory.createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
-                        }
                     }
                     break;
 
@@ -1824,22 +1789,23 @@ public class FileShareRepository {
                 case "DocDate":
 
                     GregorianCalendar cal = new GregorianCalendar();
-
+                    
                     if (!valorAttr.equals("")) {
                         cal.setTime((Date) attr.getValue());
+                        // cmis:creationDate
+                        if (FilterParser.isContainedInFilter(PropertyIds.CREATION_DATE, requestedIds)) {
+                            properties.put(PropertyIds.CREATION_DATE,
+                                    objectFactory.createPropertyDateTimeData(PropertyIds.CREATION_DATE, cal));
+                        }
+
+                        // cmis:lastModificationDate
+                        if (FilterParser.isContainedInFilter(PropertyIds.LAST_MODIFICATION_DATE, requestedIds)) {
+                            properties.put(PropertyIds.LAST_MODIFICATION_DATE,
+                                    objectFactory.createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
+                        }
                     }
 
-                    // cmis:creationDate
-                    if (FilterParser.isContainedInFilter(PropertyIds.CREATION_DATE, requestedIds)) {
-                        properties.put(PropertyIds.CREATION_DATE,
-                                objectFactory.createPropertyDateTimeData(PropertyIds.CREATION_DATE, cal));
-                    }
 
-                    // cmis:lastModificationDate
-                    if (FilterParser.isContainedInFilter(PropertyIds.LAST_MODIFICATION_DATE, requestedIds)) {
-                        properties.put(PropertyIds.LAST_MODIFICATION_DATE,
-                                objectFactory.createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
-                    }
 
                     break;
 
