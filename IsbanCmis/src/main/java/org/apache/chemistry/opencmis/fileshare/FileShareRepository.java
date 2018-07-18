@@ -611,6 +611,7 @@ public class FileShareRepository {
         }
 
         String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId, contentStream,typeId);
+
         return idFileOPD;
     }
 
