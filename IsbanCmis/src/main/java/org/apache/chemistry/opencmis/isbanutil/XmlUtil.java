@@ -26,6 +26,7 @@ import org.apache.chemistry.opencmis.prodoc.SesionProDoc;
 import prodoc.Attribute;
 import prodoc.PDDocs;
 import prodoc.PDException;
+import prodoc.PDFolders;
 import prodoc.PDObjDefs;
 import prodoc.Record;
 
@@ -386,9 +387,9 @@ public class XmlUtil {
 
                     // crear el Object Type
                     // --> Datos "cabecera" CMIS - Están rellenas todos los que son necesarios para
-
+                    
                     // <cmis:id>Prueba_CH</cmis:id>
-                    typeDef.setLocalName(recObjOPD.getAttr("PDId").getValue().toString());
+                    typeDef.setId(recObjOPD.getAttr("Name").getValue().toString());
 
                     // <cmis:localName>Prueba_CH</cmis:localName>
                     typeDef.setLocalName(recObjOPD.getAttr("Name").getValue().toString());
@@ -436,8 +437,8 @@ public class XmlUtil {
 
                     // --> FIN Datos "cabecera" CMIS
 
-                    PDDocs docAux = new PDDocs(sesion.getMainSession(), nombreObjectType);
-                    Record recAux = docAux.getRecSum();
+                    PDFolders folAux = new PDFolders(sesion.getMainSession(), nombreObjectType);
+                    Record recAux = folAux.getRecSum();
 
                     recAux.initList();
                     Attribute attr = recAux.nextAttr();
