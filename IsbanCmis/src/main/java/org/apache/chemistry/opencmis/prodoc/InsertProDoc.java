@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import javax.activation.MimeType;
+import javax.activation.MimetypesFileTypeMap;
+
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.data.Properties;
 import org.apache.chemistry.opencmis.commons.data.PropertyData;
@@ -13,6 +16,7 @@ import prodoc.PDDocs;
 import prodoc.PDException;
 import prodoc.PDFolders;
 import prodoc.PDMimeType;
+import prodoc.Record;
 
 /**
  * 
@@ -62,36 +66,35 @@ public class InsertProDoc {
      * @param properties
      * @param sesion
      * @param parentId
+     * @param typeId 
      * @param contentStream
      * @return Id del documento creado
      */
     public static String crearDocumento(Properties properties, SesionProDoc sesion, String parentId,
-            ContentStream contentStream, String objId) { //TODO --> ELIMINAR objId al terminar las pruebas
+            String typeId, ContentStream contentStream) {
         PDDocs doc = null;
         try {
             PropertyData<?> nombre = properties.getProperties().get("cmis:name");
+            if(typeId.equalsIgnoreCase("cmis:document")) {
+            	typeId="PD_DOCS";
+            }
+           
+            doc = new PDDocs(sesion.getMainSession(), typeId); 
 
-            doc = new PDDocs(sesion.getMainSession(), "PD_DOCS"); // TODO --> Modificar - Obtener el DocType
             doc.setTitle(nombre.getValues().get(0).toString());
             if (parentId.equals("@root@")) {
                 doc.setParentId("RootFolder");
             } else {
-                doc.setParentId(parentId);
+            	doc.setParentId(parentId);
             }
-
-            doc.setPDId(objId); // TODO --> ELIMINAR CUANDO SE TERMINEN LAS PRUEBAS
-            
-            // doc.setFile("C:\\pruebas\\API_disruptiva\\DocCrearDoc.txt");
-
-            // String resultStreamCont = getStreamContents(contentStream.getStream());
 
             InputStream stream = contentStream.getStream();
             doc.setStream(stream);
-            PDMimeType mimetype = new PDMimeType(sesion.getMainSession());
-            String mimeOPD = mimetype.SolveName(contentStream.getFileName());
-            doc.setMimeType(mimeOPD);
-            doc.setName(contentStream.getFileName());
-
+            String nomAdj=contentStream.getFileName();
+            String ext =nomAdj.substring(nomAdj.indexOf(".")+1).toLowerCase();
+            
+            doc.setMimeType(ext);
+            doc.setName(nomAdj);
             doc.insert();
 
         } catch (PDException e) {
