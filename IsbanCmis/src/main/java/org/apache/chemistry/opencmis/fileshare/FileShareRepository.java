@@ -601,9 +601,6 @@ public class FileShareRepository {
             throw new CmisInvalidArgumentException("Type must be a document type!");
         }
 
-        // compile the properties
-        PropertiesImpl props = compileWriteProperties(typeId, context.getUsername(), context.getUsername(), properties);
-
         // check the name
         String name = FileShareUtils.getStringProperty(properties, PropertyIds.NAME);
         if (!isValidName(name)) {

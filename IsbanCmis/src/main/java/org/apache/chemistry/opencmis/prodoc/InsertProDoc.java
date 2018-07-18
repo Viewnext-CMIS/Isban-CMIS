@@ -5,9 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import javax.activation.MimeType;
-import javax.activation.MimetypesFileTypeMap;
-
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.data.Properties;
 import org.apache.chemistry.opencmis.commons.data.PropertyData;
@@ -15,8 +12,6 @@ import org.apache.chemistry.opencmis.commons.data.PropertyData;
 import prodoc.PDDocs;
 import prodoc.PDException;
 import prodoc.PDFolders;
-import prodoc.PDMimeType;
-import prodoc.Record;
 
 /**
  * 
@@ -105,9 +100,6 @@ public class InsertProDoc {
     }
 
     public static String getStreamContents(InputStream in) throws IOException {
-
-        // InputStream in2 = new FileInputStream(new
-        // File("C:\\pruebas\\API_disruptiva\\DocCrearDoc.txt"));
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         StringBuilder out = new StringBuilder();
