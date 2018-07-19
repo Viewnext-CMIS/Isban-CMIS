@@ -45,7 +45,7 @@ public class XmlUtil {
      * 
      * @throws PDException
      */
-    public static ArrayList<Object> convertirXmlObjectType(CallContext context, SesionProDoc sesion,
+    public static ArrayList<Object> crearObjectType(CallContext context, SesionProDoc sesion,
             String nombreObjectType) throws PDException {
 
         ArrayList<Object> result = new ArrayList<Object>();

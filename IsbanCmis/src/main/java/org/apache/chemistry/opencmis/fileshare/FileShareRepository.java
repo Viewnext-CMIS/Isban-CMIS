@@ -1604,7 +1604,7 @@ public class FileShareRepository {
 
                 String folderType = recOPD.getAttr("FolderType").getValue().toString();
                 if (!existObjType(folderType) && !folderType.equals("PD_FOLDERS")) {
-                    ArrayList<Object> typeDefs = XmlUtil.convertirXmlObjectType(context, sesProdoc,
+                    ArrayList<Object> typeDefs = XmlUtil.crearObjectType(context, sesProdoc,
                             recOPD.getAttr("FolderType").getValue().toString());
                     FolderTypeDefinitionImpl typeDef = (FolderTypeDefinitionImpl) typeDefs.get(0);
                     this.typeManager.addTypeDefinition(typeDef);
@@ -1620,7 +1620,7 @@ public class FileShareRepository {
                 // probando
                 String docType = recOPD.getAttr("DocType").getValue().toString();
                 if (!existObjType(docType) && !docType.equals("PD_DOCS")) {
-                    ArrayList<Object> typeDefs = XmlUtil.convertirXmlObjectType(context, sesProdoc,
+                    ArrayList<Object> typeDefs = XmlUtil.crearObjectType(context, sesProdoc,
                             recOPD.getAttr("DocType").getValue().toString());
                     DocumentTypeDefinitionImpl typeDef = (DocumentTypeDefinitionImpl) typeDefs.get(0);
                     this.typeManager.addTypeDefinition(typeDef);
