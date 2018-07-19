@@ -1588,8 +1588,7 @@ public class FileShareRepository {
         return result;
     }
 
-    private ObjectDataImpl compileOPDProp(CallContext context, SesionProDoc sesProdoc, String filter, ObjPD child)
-            throws PDException {
+    private ObjectDataImpl compileOPDProp(CallContext context, SesionProDoc sesProdoc, String filter, ObjPD child) {
 
         ObjectDataImpl objDataOut = new ObjectDataImpl();
         Record recOPD = null;
@@ -2101,7 +2100,7 @@ public class FileShareRepository {
             objDataOut.setProperties(props);
 
         } catch (PDException e) {
-            throw e;
+            e.printStackTrace();
         }
 
         return objDataOut;
