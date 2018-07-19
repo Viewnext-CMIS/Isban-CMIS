@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Date;
 
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.data.Properties;
@@ -82,12 +83,13 @@ public class InsertProDoc {
             } else {
             	doc.setParentId(parentId);
             }
-
+            doc.setDocDate(new Date());
+            
             InputStream stream = contentStream.getStream();
             doc.setStream(stream);
+            
             String nomAdj=contentStream.getFileName();
             String ext =nomAdj.substring(nomAdj.indexOf(".")+1).toLowerCase();
-            
             doc.setMimeType(ext);
             doc.setName(nomAdj);
             doc.insert();
