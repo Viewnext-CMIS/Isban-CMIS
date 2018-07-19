@@ -607,7 +607,7 @@ public class FileShareRepository {
             throw new CmisNameConstraintViolationException("Name is not valid!");
         }
 
-        String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId, contentStream,typeId);
+        String idFileOPD = InsertProDoc.crearDocumento(properties, sesion, folderId, contentStream, typeId);
 
         return idFileOPD;
     }
@@ -1248,6 +1248,9 @@ public class FileShareRepository {
         debug("getContentStream");
         checkUser(context, false);
 
+        // compile data
+        ContentStreamImpl result = new ContentStreamImpl();
+
         // get the file
         try {
             PDDocs objDoc = new PDDocs(sesProdoc.getMainSession());
@@ -1261,51 +1264,28 @@ public class FileShareRepository {
                 throw new CmisStreamNotSupportedException("Not a file!");
             }
 
-            // // TODO Obtener el tamaño del documento para saber si tiene contenido
-            // if (file.length() == 0) {
-            // throw new CmisConstraintException("Document has no content!");
-            // }
-
-            // Tenemos que obtener el Stream
-            // InputStream stream = null;
-            // try {
-            // stream = new BufferedInputStream(new
-            // FileInputStream(recObjDoc.getAttr("Name").getValue().toString()),
-            // 64 * 1024);
-            // if (offset != null || length != null) {
-            // stream = new ContentRangeInputStream(stream, offset, length);
-            // }
-            // } catch (FileNotFoundException e) {
-            // throw new CmisObjectNotFoundException(e.getMessage(), e);
-            // }
-
             String nombreDoc = recObjDoc.getAttr("Name").getValue().toString();
-            // String mimeType = recObjDoc.getAttr("MimeType").getValue().toString();
-
             boolean empiezaConHttp = nombreDoc.substring(0).startsWith("http");
 
             // Si el documento es un enlace (no tiene adjunto)
             if (empiezaConHttp) {
 
-                System.out.println();
                 Desktop enlace = Desktop.getDesktop();
                 try {
                     enlace.browse(new URI(nombreDoc));
                 } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new PDException(e.getMessage());
                 } catch (URISyntaxException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new PDException(e.getMessage());
                 }
 
             } else { // Si el documento tiene un adjunto
 
+                // Obtenemos la ruta de la carpeta temporal del sistema
                 String rutaTemp = System.getProperty("java.io.tmpdir");
                 File destino = new File(rutaTemp + nombreDoc);
 
-                // File destino = new File("C:\\pruebas\\API_disruptiva\\" + nombreDoc);
-
+                // Obtener el Stream
                 OutputStream out;
                 try {
                     out = new FileOutputStream(destino);
@@ -1314,7 +1294,6 @@ public class FileShareRepository {
                     throw new PDException(ex.getMessage());
                 }
 
-                // Tenemos que obtener el Stream
                 InputStream stream = null;
                 try {
                     stream = new BufferedInputStream(new FileInputStream(destino), 64 * 1024);
@@ -1325,8 +1304,6 @@ public class FileShareRepository {
                     throw new CmisObjectNotFoundException(e.getMessage(), e);
                 }
 
-                // compile data
-                ContentStreamImpl result;
                 if ((offset != null && offset.longValue() > 0) || length != null) {
                     result = new PartialContentStreamImpl();
                 } else {
@@ -1335,27 +1312,19 @@ public class FileShareRepository {
 
                 result.setFileName(recObjDoc.getAttr("Name").getValue().toString());
 
-                // TODO Obtener el tamaño del documento
-                // result.setLength(BigInteger.valueOf(file.length()));
-
-                // Ejemplo InsertProDoc
-                // // PDMimeType mimetype = new PDMimeType(sesion.getMainSession());
-                // // String mimeOPD = mimetype.SolveName(contentStream.getFileName());
-
                 PDMimeType mimetype = new PDMimeType(sesProdoc.getMainSession());
                 String mimeDoc = mimetype.SolveName(recObjDoc.getAttr("Name").getValue().toString());
 
+                result.setLength(BigInteger.valueOf(destino.length()));
                 result.setMimeType(mimeDoc);
                 result.setStream(stream);
-
-                return result;
             }
 
         } catch (PDException e1) {
             throw e1;
         }
 
-        return null;
+        return result;
 
     }
 
@@ -1732,8 +1701,8 @@ public class FileShareRepository {
 
                             // cmis:lastModificationDate
                             if (FilterParser.isContainedInFilter(PropertyIds.LAST_MODIFICATION_DATE, requestedIds)) {
-                                properties.put(PropertyIds.LAST_MODIFICATION_DATE,
-                                        objectFactory.createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
+                                properties.put(PropertyIds.LAST_MODIFICATION_DATE, objectFactory
+                                        .createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
                             }
                         }
 
@@ -1787,7 +1756,7 @@ public class FileShareRepository {
                 case "DocDate":
 
                     GregorianCalendar cal = new GregorianCalendar();
-                    
+
                     if (!valorAttr.equals("")) {
                         cal.setTime((Date) attr.getValue());
                         // cmis:creationDate
@@ -1802,8 +1771,6 @@ public class FileShareRepository {
                                     objectFactory.createPropertyDateTimeData(PropertyIds.LAST_MODIFICATION_DATE, cal));
                         }
                     }
-
-
 
                     break;
 
