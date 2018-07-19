@@ -5,10 +5,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.chemistry.opencmis.commons.PropertyIds;
+import org.apache.chemistry.opencmis.commons.definitions.MutablePropertyDefinition;
 import org.apache.chemistry.opencmis.commons.definitions.PropertyDefinition;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.enums.Cardinality;
 import org.apache.chemistry.opencmis.commons.enums.PropertyType;
+import org.apache.chemistry.opencmis.commons.enums.Updatability;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.BindingsObjectFactoryImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.DocumentTypeDefinitionImpl;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.FolderTypeDefinitionImpl;
@@ -171,6 +173,8 @@ public class XmlUtil {
                             prop2.setPropertyType(PropertyType.DATETIME);
                             prop2.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop2);
+                            
                             propertyDefinitions.put(PropertyIds.CREATION_DATE, prop2);
 
                             propertyDefinitions.put(PropertyIds.LAST_MODIFICATION_DATE, prop2);
@@ -190,6 +194,8 @@ public class XmlUtil {
                             prop3.setPropertyType(PropertyType.ID);
                             prop3.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop3);
+                            
                             propertyDefinitions.put(PropertyIds.OBJECT_TYPE_ID, prop3);
 
                             break;
@@ -204,6 +210,8 @@ public class XmlUtil {
                             prop4.setPropertyType(PropertyType.STRING);
                             prop4.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop4);
+                            
                             propertyDefinitions.put(nombreAttr, prop4);
 
                             break;
@@ -221,6 +229,8 @@ public class XmlUtil {
                             prop5.setPropertyType(PropertyType.STRING);
                             prop5.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop5);
+                            
                             propertyDefinitions.put(PropertyIds.CONTENT_STREAM_MIME_TYPE, prop5);
 
                             break;
@@ -237,6 +247,8 @@ public class XmlUtil {
                             prop6.setPropertyType(PropertyType.STRING);
                             prop6.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop6);
+                            
                             propertyDefinitions.put(PropertyIds.CONTENT_STREAM_FILE_NAME, prop6);
 
                             break;
@@ -257,6 +269,8 @@ public class XmlUtil {
                             prop7.setPropertyType(PropertyType.STRING);
                             prop7.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop7);
+                            
                             propertyDefinitions.put(PropertyIds.CREATED_BY, prop7);
 
                             propertyDefinitions.put(PropertyIds.LAST_MODIFIED_BY, prop7);
@@ -279,6 +293,8 @@ public class XmlUtil {
                             prop8.setPropertyType(PropertyType.DATETIME);
                             prop8.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop8);
+                            
                             propertyDefinitions.put(PropertyIds.CREATION_DATE, prop8);
 
                             propertyDefinitions.put(PropertyIds.LAST_MODIFICATION_DATE, prop8);
@@ -298,6 +314,8 @@ public class XmlUtil {
                             prop9.setPropertyType(PropertyType.ID);
                             prop9.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop9);
+                            
                             propertyDefinitions.put(PropertyIds.OBJECT_ID, prop9);
 
                             break;
@@ -315,6 +333,8 @@ public class XmlUtil {
                             prop10.setPropertyType(PropertyType.ID);
                             prop10.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop10);
+                            
                             propertyDefinitions.put(PropertyIds.PARENT_ID, prop10);
 
                             break;
@@ -341,6 +361,8 @@ public class XmlUtil {
                             prop11.setPropertyType(PropertyType.STRING);
                             prop11.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop11);
+                            
                             propertyDefinitions.put(PropertyIds.NAME, prop11);
 
                             break;
@@ -358,6 +380,8 @@ public class XmlUtil {
                             prop12.setPropertyType(PropertyType.STRING);
                             prop12.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop12);
+                            
                             propertyDefinitions.put(PropertyIds.VERSION_LABEL, prop12);
 
                             break;          
@@ -475,7 +499,10 @@ public class XmlUtil {
                             prop3.setId(nombreAttr);
                             prop3.setPropertyType(PropertyType.ID);
                             prop3.setCardinality(Cardinality.SINGLE);
+                            prop3.setUpdatability(Updatability.READWRITE);
 
+                            setPermisions(prop3);
+                            
                             propertyDefinitions.put(PropertyIds.OBJECT_TYPE_ID, prop3);
 
                             break;
@@ -496,6 +523,8 @@ public class XmlUtil {
                             prop7.setPropertyType(PropertyType.STRING);
                             prop7.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop7);
+                            
                             propertyDefinitions.put(PropertyIds.CREATED_BY, prop7);
 
                             propertyDefinitions.put(PropertyIds.LAST_MODIFIED_BY, prop7);
@@ -518,6 +547,8 @@ public class XmlUtil {
                             prop8.setPropertyType(PropertyType.DATETIME);
                             prop8.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop8);
+                            
                             propertyDefinitions.put(PropertyIds.CREATION_DATE, prop8);
 
                             propertyDefinitions.put(PropertyIds.LAST_MODIFICATION_DATE, prop8);
@@ -537,6 +568,8 @@ public class XmlUtil {
                             prop9.setPropertyType(PropertyType.ID);
                             prop9.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop9);
+                            
                             propertyDefinitions.put(PropertyIds.OBJECT_ID, prop9);
 
                             break;
@@ -554,6 +587,8 @@ public class XmlUtil {
                             prop10.setPropertyType(PropertyType.ID);
                             prop10.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop10);
+                            
                             propertyDefinitions.put(PropertyIds.PARENT_ID, prop10);
 
                             break;
@@ -571,6 +606,8 @@ public class XmlUtil {
                             prop11.setPropertyType(PropertyType.STRING);
                             prop11.setCardinality(Cardinality.SINGLE);
 
+                            setPermisions(prop11);
+                            
                             propertyDefinitions.put(PropertyIds.NAME, prop11);
 
                             break;
@@ -607,6 +644,7 @@ public class XmlUtil {
 
         Attribute attr = recOPD.getAttr(nombreAttr);
         int tipoAttr = attr.getType();
+        boolean multivaluado = attr.isMultivalued();
 
         switch (tipoAttr) {
 
@@ -617,7 +655,16 @@ public class XmlUtil {
             propInt.setLocalName(nombreAttr);
             propInt.setId(nombreAttr);
             propInt.setPropertyType(PropertyType.INTEGER);
-            propInt.setCardinality(Cardinality.SINGLE);
+            
+            //TODO: Permission
+            setPermisions(propInt);
+            
+            
+            if (!multivaluado) {
+                propInt.setCardinality(Cardinality.SINGLE);
+            } else {
+                propInt.setCardinality(Cardinality.MULTI);
+            }
 
             properties.put(nombreAttr, propInt);
             break;
@@ -629,7 +676,14 @@ public class XmlUtil {
             propFloat.setLocalName(nombreAttr);
             propFloat.setId(nombreAttr);
             propFloat.setPropertyType(PropertyType.DECIMAL);
-            propFloat.setCardinality(Cardinality.SINGLE);
+
+            setPermisions(propFloat);
+            
+            if (!multivaluado) {
+                propFloat.setCardinality(Cardinality.SINGLE);
+            } else {
+                propFloat.setCardinality(Cardinality.MULTI);
+            }
 
             properties.put(nombreAttr, propFloat);
             break;
@@ -642,7 +696,14 @@ public class XmlUtil {
             propString.setLocalName(nombreAttr);
             propString.setId(nombreAttr);
             propString.setPropertyType(PropertyType.STRING);
-            propString.setCardinality(Cardinality.SINGLE);
+
+            setPermisions(propString);
+            
+            if (!multivaluado) {
+                propString.setCardinality(Cardinality.SINGLE);
+            } else {
+                propString.setCardinality(Cardinality.MULTI);
+            }
 
             properties.put(nombreAttr, propString);
 
@@ -656,7 +717,14 @@ public class XmlUtil {
             propDate.setLocalName(nombreAttr);
             propDate.setId(nombreAttr);
             propDate.setPropertyType(PropertyType.DATETIME);
-            propDate.setCardinality(Cardinality.SINGLE);
+
+            setPermisions(propDate);
+            
+            if (!multivaluado) {
+                propDate.setCardinality(Cardinality.SINGLE);
+            } else {
+                propDate.setCardinality(Cardinality.MULTI);
+            }
 
             properties.put(nombreAttr, propDate);
 
@@ -670,7 +738,14 @@ public class XmlUtil {
             propBool.setLocalName(nombreAttr);
             propBool.setId(nombreAttr);
             propBool.setPropertyType(PropertyType.BOOLEAN);
-            propBool.setCardinality(Cardinality.SINGLE);
+
+            setPermisions(propBool);
+            
+            if (!multivaluado) {
+                propBool.setCardinality(Cardinality.SINGLE);
+            } else {
+                propBool.setCardinality(Cardinality.MULTI);
+            }
 
             properties.put(nombreAttr, propBool);
 
@@ -684,7 +759,14 @@ public class XmlUtil {
             propTime.setLocalName(nombreAttr);
             propTime.setId(nombreAttr);
             propTime.setPropertyType(PropertyType.DATETIME);
-            propTime.setCardinality(Cardinality.SINGLE);
+
+            setPermisions(propTime);
+            
+            if (!multivaluado) {
+                propTime.setCardinality(Cardinality.SINGLE);
+            } else {
+                propTime.setCardinality(Cardinality.MULTI);
+            }
 
             properties.put(nombreAttr, propTime);
 
@@ -698,6 +780,15 @@ public class XmlUtil {
             // TODO : Hacer tratamiento
             break;
         }
+
+    }
+
+    /**
+     * 
+     * @param prop
+     */
+    private static void setPermisions(MutablePropertyDefinition prop) {
+        prop.setUpdatability(Updatability.READWRITE);
 
     }
 }
