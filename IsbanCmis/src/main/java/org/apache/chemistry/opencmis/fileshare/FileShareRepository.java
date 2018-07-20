@@ -2130,17 +2130,10 @@ public class FileShareRepository {
 
         case tINTEGER:
             if (attr.getValue() != null) {
-                // MutablePropertyInteger createPropertyIntegerData(String id, List<BigInteger>
-                // values);
-
-                // MutablePropertyInteger createPropertyIntegerData(String id, BigInteger
-                // value);
-
                 BigInteger valorInt = BigInteger.valueOf((Integer) attr.getValue());
                 properties.put(nombreAttr, objectFactory.createPropertyIntegerData(nombreAttr, valorInt));
-            } else {
-
             }
+            
             break;
 
         case tFLOAT:
@@ -2152,7 +2145,6 @@ public class FileShareRepository {
                 // value);
                 BigDecimal valorFlo = BigDecimal.valueOf((Float) attr.getValue());
                 properties.put(nombreAttr, objectFactory.createPropertyDecimalData(nombreAttr, valorFlo));
-            } else {
             }
             break;
 
@@ -2185,27 +2177,21 @@ public class FileShareRepository {
 
                 properties.put(nombreAttr,
                         objectFactory.createPropertyBooleanData(nombreAttr, (Boolean) attr.getValue()));
-            } else {
             }
             break;
 
         case tTIMESTAMP:
             if (attr.getValue() != null) {
-            } else {
             }
             break;
 
         case tTHES:
             if (attr.getValue() != null) {
-            } else {
-
             }
             break;
 
         default:
-            if (attr.getValue() != null) {
-            } else {
-            }
+            
             break;
         }
 
