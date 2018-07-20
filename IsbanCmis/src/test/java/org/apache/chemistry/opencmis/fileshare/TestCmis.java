@@ -22,8 +22,8 @@ import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 public class TestCmis {
 	private static final String TEST_TXT = "test.txt";
 	static Session session = null;
-	final static String carpetaPadre = "Sergio";
-	final static String nombreDoc = "PruebaFinal01";
+	final static String carpetaPadre = "Pruebas201807_20";
+	final static String nombreDoc = "PruebaDocCustomCarpeta_201807_20";
 	final static String nombreTipo = "PruebaDavidFullVer";
 	final static String mime = "text/plain";
 
@@ -31,8 +31,8 @@ public class TestCmis {
 	private static final Map<String, Object> listaAtrib = new HashMap<String, Object>() {
 
 		{
-			put("AT_CADENA_FIJA", "CadenaFija01");
-			put("AT_CADENA_VARIA", "CadenaVariable01");
+			put("AT_CADENA_FIJA", "Fija_201807_20");
+			put("AT_CADENA_VARIA", "Variable_201807_20");
 			
 		}
 	};
